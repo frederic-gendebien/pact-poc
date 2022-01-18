@@ -1,8 +1,8 @@
 package main
 
 import (
+	"bitbucket.org/fredericgendebien/pact-poc/server/pkg/interfaces/client"
 	"context"
-	"github.com/frederic-gendebien/poc-pact/server/pkg/interfaces/client"
 	"github.com/google/uuid"
 	"log"
 )

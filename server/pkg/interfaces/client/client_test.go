@@ -1,11 +1,11 @@
 package client
 
 import (
+	"bitbucket.org/fredericgendebien/pact-poc/server/internal/interfaces/http"
+	"bitbucket.org/fredericgendebien/pact-poc/server/pkg/domain/model"
 	"context"
 	"errors"
 	"fmt"
-	"github.com/frederic-gendebien/poc-pact/server/internal/interfaces/http"
-	"github.com/frederic-gendebien/poc-pact/server/pkg/domain/model"
 	"github.com/pact-foundation/pact-go/dsl"
 	"log"
 	"os"

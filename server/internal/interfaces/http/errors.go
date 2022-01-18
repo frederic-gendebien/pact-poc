@@ -1,8 +1,8 @@
 package http
 
 import (
+	"bitbucket.org/fredericgendebien/pact-poc/server/pkg/domain/model"
 	"errors"
-	"github.com/frederic-gendebien/poc-pact/server/pkg/domain/model"
 	"github.com/gin-gonic/gin"
 	gohttp "net/http"
 )

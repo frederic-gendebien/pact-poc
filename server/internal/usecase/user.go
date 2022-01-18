@@ -1,9 +1,9 @@
 package usecase
 
 import (
+	"bitbucket.org/fredericgendebien/pact-poc/server/internal/domain"
+	"bitbucket.org/fredericgendebien/pact-poc/server/pkg/domain/model"
 	"context"
-	"github.com/frederic-gendebien/poc-pact/server/internal/domain"
-	"github.com/frederic-gendebien/poc-pact/server/pkg/domain/model"
 )
 
 type UserUseCase interface {

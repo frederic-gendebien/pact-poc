@@ -1,7 +1,7 @@
 package http
 
 import (
-	"github.com/frederic-gendebien/poc-pact/server/internal/usecase"
+	"bitbucket.org/fredericgendebien/pact-poc/server/internal/usecase"
 	"github.com/gin-gonic/gin"
 )
 

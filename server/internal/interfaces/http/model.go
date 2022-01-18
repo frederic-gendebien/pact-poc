@@ -1,7 +1,7 @@
 package http
 
 import (
-	"github.com/frederic-gendebien/poc-pact/server/pkg/domain/model"
+	"bitbucket.org/fredericgendebien/pact-poc/server/pkg/domain/model"
 )
 
 func NewUserFrom(user model.User) User {

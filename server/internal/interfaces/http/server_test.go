@@ -1,10 +1,10 @@
 package http
 
 import (
+	"bitbucket.org/fredericgendebien/pact-poc/server/internal/domain"
+	"bitbucket.org/fredericgendebien/pact-poc/server/internal/infrastructure/persistence/inmemory"
+	"bitbucket.org/fredericgendebien/pact-poc/server/internal/usecase"
 	"fmt"
-	"github.com/frederic-gendebien/poc-pact/server/internal/domain"
-	"github.com/frederic-gendebien/poc-pact/server/internal/infrastructure/persistence/inmemory"
-	"github.com/frederic-gendebien/poc-pact/server/internal/usecase"
 	"github.com/pact-foundation/pact-go/dsl"
 	"github.com/pact-foundation/pact-go/types"
 	"github.com/pact-foundation/pact-go/utils"

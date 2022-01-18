@@ -1,8 +1,8 @@
 package http
 
 import (
-	"github.com/frederic-gendebien/poc-pact/server/internal/usecase"
-	"github.com/frederic-gendebien/poc-pact/server/pkg/domain/model"
+	"bitbucket.org/fredericgendebien/pact-poc/server/internal/usecase"
+	"bitbucket.org/fredericgendebien/pact-poc/server/pkg/domain/model"
 	"github.com/gin-gonic/gin"
 	"strconv"
 )

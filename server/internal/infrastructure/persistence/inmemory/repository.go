@@ -1,10 +1,10 @@
 package inmemory
 
 import (
+	"bitbucket.org/fredericgendebien/pact-poc/server/internal/domain"
+	"bitbucket.org/fredericgendebien/pact-poc/server/pkg/domain/model"
 	"context"
 	"fmt"
-	"github.com/frederic-gendebien/poc-pact/server/internal/domain"
-	"github.com/frederic-gendebien/poc-pact/server/pkg/domain/model"
 	"log"
 	"sync"
 )

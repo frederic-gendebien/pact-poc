@@ -1,10 +1,10 @@
 package main
 
 import (
-	"github.com/frederic-gendebien/poc-pact/server/internal/domain"
-	"github.com/frederic-gendebien/poc-pact/server/internal/infrastructure/persistence/inmemory"
-	"github.com/frederic-gendebien/poc-pact/server/internal/interfaces/http"
-	"github.com/frederic-gendebien/poc-pact/server/internal/usecase"
+	"bitbucket.org/fredericgendebien/pact-poc/server/internal/domain"
+	"bitbucket.org/fredericgendebien/pact-poc/server/internal/infrastructure/persistence/inmemory"
+	"bitbucket.org/fredericgendebien/pact-poc/server/internal/interfaces/http"
+	"bitbucket.org/fredericgendebien/pact-poc/server/internal/usecase"
 	"log"
 )
 

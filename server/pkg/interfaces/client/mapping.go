@@ -1,10 +1,10 @@
 package client
 
 import (
+	"bitbucket.org/fredericgendebien/pact-poc/server/internal/interfaces/http"
+	"bitbucket.org/fredericgendebien/pact-poc/server/pkg/domain/model"
 	"encoding/json"
 	"fmt"
-	"github.com/frederic-gendebien/poc-pact/server/internal/interfaces/http"
-	"github.com/frederic-gendebien/poc-pact/server/pkg/domain/model"
 	"github.com/go-resty/resty/v2"
 	gohttp "net/http"
 )

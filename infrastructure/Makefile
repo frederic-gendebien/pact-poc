@@ -2,6 +2,9 @@ include ../config.mk
 
 STACK=infra
 
+clean:
+	@echo
+
 docker-build:
 	$(MAKE) -C reverseproxy docker-build
 

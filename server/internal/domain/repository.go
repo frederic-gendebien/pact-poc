@@ -1,8 +1,8 @@
 package domain
 
 import (
+	"bitbucket.org/fredericgendebien/pact-poc/server/pkg/domain/model"
 	"context"
-	"github.com/frederic-gendebien/poc-pact/server/pkg/domain/model"
 	"io"
 )
 
