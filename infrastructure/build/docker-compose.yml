@@ -1,35 +1,6 @@
 version: "3.8"
 
 services:
-  postgres:
-    image: postgres:alpine
-    healthcheck:
-      test: psql postgres --command "select 1" -U postgres
-    ports:
-      - "5432:5432"
-    environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: postgres
-    networks:
-      - napoleongames
-
-  pact-broker:
-    image: pactfoundation/pact-broker:latest
-    ports:
-      - "9292:9292"
-    depends_on:
-      - postgres
-    environment:
-      PACT_BROKER_PORT: '9292'
-      PACT_BROKER_DATABASE_URL: "postgres://postgres:postgres@postgres/postgres"
-      PACT_BROKER_LOG_LEVEL: INFO
-      PACT_BROKER_SQL_LOG_LEVEL: DEBUG
-      PACT_BROKER_DATABASE_CONNECT_MAX_RETRIES: "5"
-      PACT_BROKER_BASE_URL: 'https://localhost http://localhost http://localhost:9292 http://pact-broker:9292'
-    networks:
-      - napoleongames
-
   reverseproxy:
     image: pactpoc/reverseproxy:latest
     ports:
