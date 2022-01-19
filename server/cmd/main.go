@@ -16,7 +16,7 @@ var (
 
 func init() {
 	repository = inmemory.NewUserRepository()
-	useCase = usecase.NewDefaultUserCase(repository)
+	useCase = usecase.NewUserUseCase(repository)
 	server = http.NewServer(useCase)
 }
 

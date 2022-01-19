@@ -26,7 +26,8 @@ test:
 publish-pacts:
 	pact-broker publish tests/pact/pacts \
 		--broker-base-url=$(PACT_BROKER_URL) \
-		--consumer-app-version=$(VERSION)
+		--consumer-app-version=$(VERSION) \
+		--tag=master
 
 docker-build:
 	$(MAKE) -C infrastructure docker-build

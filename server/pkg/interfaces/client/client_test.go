@@ -49,7 +49,7 @@ func TestClientPact_RegisterNewUser(t *testing.T) {
 			}).
 			WillRespondWith(dsl.Response{
 				Status:  gohttp.StatusCreated,
-				Headers: responseHeaders(),
+				Headers: responseHeadersWithoutBody(),
 				Body:    nil,
 			})
 
@@ -71,8 +71,8 @@ func TestClientPact_RegisterNewUser(t *testing.T) {
 			}).
 			WillRespondWith(dsl.Response{
 				Status:  gohttp.StatusBadRequest,
-				Headers: responseHeaders(),
-				Body:    errorResponse("user1 exists already"),
+				Headers: responseHeadersWithBody(),
+				Body:    errorResponse("user with id: user1 already exists"),
 			})
 
 		verify(t, pact, func() error {
@@ -96,7 +96,7 @@ func TestClientPact_ListAllUsers(t *testing.T) {
 			testUser(5),
 		}
 		pact.AddInteraction().
-			Given("The many users exist").
+			Given("Many users exist").
 			UponReceiving("A list all users request").
 			WithRequest(dsl.Request{
 				Method:  gohttp.MethodGet,
@@ -107,7 +107,7 @@ func TestClientPact_ListAllUsers(t *testing.T) {
 			}).
 			WillRespondWith(dsl.Response{
 				Status:  gohttp.StatusOK,
-				Headers: responseHeaders(),
+				Headers: responseHeadersWithBody(),
 				Body:    expectedUsers,
 			})
 
@@ -148,7 +148,7 @@ func TestClientPact_ListAllUsers(t *testing.T) {
 			}).
 			WillRespondWith(dsl.Response{
 				Status:  gohttp.StatusOK,
-				Headers: responseHeaders(),
+				Headers: responseHeadersWithBody(),
 				Body:    expectedUsers,
 			})
 
@@ -192,7 +192,7 @@ func TestClientPact_FindUserById(t *testing.T) {
 			}).
 			WillRespondWith(dsl.Response{
 				Status:  gohttp.StatusOK,
-				Headers: responseHeaders(),
+				Headers: responseHeadersWithBody(),
 				Body:    expectedUser,
 			})
 
@@ -223,8 +223,8 @@ func TestClientPact_FindUserById(t *testing.T) {
 			}).
 			WillRespondWith(dsl.Response{
 				Status:  gohttp.StatusNotFound,
-				Headers: responseHeaders(),
-				Body:    errorResponse("user not found"),
+				Headers: responseHeadersWithBody(),
+				Body:    errorResponse("user with id: user1 was not found"),
 			})
 
 		verify(t, pact, func() error {
@@ -252,7 +252,7 @@ func TestClientPact_DeleteUser(t *testing.T) {
 			}).
 			WillRespondWith(dsl.Response{
 				Status:  gohttp.StatusAccepted,
-				Headers: responseHeaders(),
+				Headers: responseHeadersWithoutBody(),
 				Body:    nil,
 			})
 
@@ -279,8 +279,8 @@ func TestClientPact_DeleteUser(t *testing.T) {
 			}).
 			WillRespondWith(dsl.Response{
 				Status:  gohttp.StatusNotFound,
-				Headers: responseHeaders(),
-				Body:    errorResponse("user not found"),
+				Headers: responseHeadersWithBody(),
+				Body:    errorResponse("user with id: user1 was not found"),
 			})
 
 		verify(t, pact, func() error {
@@ -336,10 +336,14 @@ func requestHeadersWithoutBody() dsl.MapMatcher {
 	}
 }
 
-func responseHeaders() dsl.MapMatcher {
+func responseHeadersWithBody() dsl.MapMatcher {
 	return dsl.MapMatcher{
 		"Content-Type": dsl.Term("application/json; charset=utf-8", `application\/json`),
 	}
+}
+
+func responseHeadersWithoutBody() dsl.MapMatcher {
+	return dsl.MapMatcher{}
 }
 
 func testUser(number int) User {

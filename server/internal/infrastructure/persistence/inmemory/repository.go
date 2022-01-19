@@ -1,7 +1,6 @@
 package inmemory
 
 import (
-	"bitbucket.org/fredericgendebien/pact-poc/server/internal/domain"
 	"bitbucket.org/fredericgendebien/pact-poc/server/pkg/domain/model"
 	"context"
 	"fmt"
@@ -9,25 +8,34 @@ import (
 	"sync"
 )
 
-func NewUserRepository() domain.UserRepository {
-	return &Repository{
+func NewUserRepository() *UserRepository {
+	return &UserRepository{
 		lock:  &sync.RWMutex{},
 		users: make(map[string]model.User),
 	}
 }
 
-type Repository struct {
+type UserRepository struct {
 	lock  *sync.RWMutex
 	users map[string]model.User
 }
 
-func (r *Repository) Close() error {
+func (r *UserRepository) Close() error {
 	log.Println("closing user repository")
 
 	return nil
 }
 
-func (r *Repository) AddUser(ctx context.Context, newUser model.User) error {
+func (r *UserRepository) Clear(ctx context.Context) error {
+	r.lock.Lock()
+	defer r.lock.Unlock()
+
+	r.users = make(map[string]model.User)
+
+	return nil
+}
+
+func (r *UserRepository) AddUser(ctx context.Context, newUser model.User) error {
 	r.lock.Lock()
 	defer r.lock.Unlock()
 
@@ -41,7 +49,7 @@ func (r *Repository) AddUser(ctx context.Context, newUser model.User) error {
 	return nil
 }
 
-func (r *Repository) DeleteUser(ctx context.Context, userId string) error {
+func (r *UserRepository) DeleteUser(ctx context.Context, userId string) error {
 	r.lock.Lock()
 	defer r.lock.Unlock()
 
@@ -54,7 +62,7 @@ func (r *Repository) DeleteUser(ctx context.Context, userId string) error {
 	return nil
 }
 
-func (r *Repository) GetUsers(ctx context.Context, next <-chan bool) (<-chan model.User, error) {
+func (r *UserRepository) GetUsers(ctx context.Context, next <-chan bool) (<-chan model.User, error) {
 	users := make(chan model.User)
 	go func() {
 		r.lock.RLock()
@@ -75,7 +83,7 @@ func (r *Repository) GetUsers(ctx context.Context, next <-chan bool) (<-chan mod
 	return users, nil
 }
 
-func (r *Repository) GetUser(ctx context.Context, userId string) (model.User, error) {
+func (r *UserRepository) GetUser(ctx context.Context, userId string) (model.User, error) {
 	r.lock.RLock()
 	defer r.lock.RUnlock()
 

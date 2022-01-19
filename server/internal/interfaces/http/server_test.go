@@ -1,9 +1,9 @@
 package http
 
 import (
-	"bitbucket.org/fredericgendebien/pact-poc/server/internal/domain"
 	"bitbucket.org/fredericgendebien/pact-poc/server/internal/infrastructure/persistence/inmemory"
 	"bitbucket.org/fredericgendebien/pact-poc/server/internal/usecase"
+	"context"
 	"fmt"
 	"github.com/pact-foundation/pact-go/dsl"
 	"github.com/pact-foundation/pact-go/types"
@@ -15,70 +15,100 @@ import (
 )
 
 var (
-	dir, _  = os.Getwd()
-	pactDir = fmt.Sprintf("%s/../../../tests/pact", dir)
-	logDir  = fmt.Sprintf("%s/../../../tests/pact/log", dir)
-	pact    = dsl.Pact{
-		Provider:                 "pactpocServer",
-		LogDir:                   logDir,
-		PactDir:                  pactDir,
+	port       int
+	pact       dsl.Pact
+	repository *inmemory.UserRepository
+	useCase    usecase.UserUseCase
+	server     *Server
+)
+
+func init() {
+	var err error
+	port, err = utils.GetFreePort()
+	if err != nil {
+		log.Fatalf("could not find free port: %v", err)
+	}
+
+	if err := os.Setenv("PORT", strconv.Itoa(port)); err != nil {
+		log.Fatalf("could not set port environment variable: %v", err)
+	}
+
+	pact = dsl.Pact{
+		Provider:                 "user-server",
+		LogDir:                   "../../../../tests/pact/logs",
+		PactDir:                  "../../../../tests/pact/pacts",
 		DisableToolValidityCheck: true,
 		LogLevel:                 "INFO",
 	}
-)
 
-func TestServer_AddUser(t *testing.T) {
-	port := startServerWith(emptyRepository())
-	pact.VerifyProvider(t, types.VerifyRequest{
-		ProviderBaseURL:            fmt.Sprintf("http://localhost:%d", port),
-		PactURLs:                   nil,
-		BrokerURL:                  "",
-		ConsumerVersionSelectors:   nil,
-		Tags:                       nil,
-		ProviderTags:               nil,
-		ProviderBranch:             "",
-		ProviderStatesSetupURL:     "",
-		Provider:                   "",
+	repository = inmemory.NewUserRepository()
+	useCase = usecase.NewUserUseCase(repository)
+	server = NewServer(useCase)
+	go func() {
+		log.Println(server.Start())
+	}()
+}
+
+func TestServerPact(t *testing.T) {
+	_, err := pact.VerifyProvider(t, types.VerifyRequest{
+		ProviderBaseURL:            fmt.Sprintf("http://127.0.0.1:%d", port),
+		Tags:                       []string{"master"},
+		BrokerURL:                  "http://localhost:9292",
 		BrokerUsername:             "",
 		BrokerPassword:             "",
-		BrokerToken:                "",
-		FailIfNoPactsFound:         false,
-		PublishVerificationResults: false,
-		ProviderVersion:            "",
-		CustomProviderHeaders:      nil,
-		StateHandlers:              nil,
-		BeforeEach:                 nil,
-		AfterEach:                  nil,
-		RequestFilter:              nil,
-		CustomTLSConfig:            nil,
-		EnablePending:              false,
-		IncludeWIPPactsSince:       nil,
-		PactLogDir:                 "",
-		PactLogLevel:               "",
-		Verbose:                    false,
-		Args:                       nil,
+		FailIfNoPactsFound:         true,
+		ProviderVersion:            "0.0.1",
+		PublishVerificationResults: true,
+		StateHandlers:              stateHandlers(),
 	})
+	if err != nil {
+		t.Fatalf("server verifaction failed: %v", err)
+	}
 }
 
-func emptyRepository() domain.UserRepository {
-	return inmemory.NewUserRepository()
+func stateHandlers() types.StateHandlers {
+	return types.StateHandlers{
+		"The user1 does not exist": emptyRepository(),
+		"The user1 exists":         repositoryWith(testUser(1)),
+		"The user1 exists already": repositoryWith(testUser(1)),
+		"Many users exist": repositoryWith(
+			testUser(1),
+			testUser(2),
+			testUser(3),
+			testUser(4),
+			testUser(5),
+		),
+		"No users exist": emptyRepository(),
+	}
 }
 
-func startServerWith(repository domain.UserRepository) int {
-	port, err := utils.GetFreePort()
-	if err != nil {
-		log.Fatalf("could not get free port: %v", err)
+func emptyRepository() types.StateHandler {
+	return func() error {
+		return repository.Clear(context.Background())
 	}
+}
 
-	err = os.Setenv("PORT", strconv.Itoa(port))
-	if err != nil {
-		log.Fatalf("could not set port as environment variable: %v", err)
+func repositoryWith(users ...User) types.StateHandler {
+	return func() error {
+		ctx := context.Background()
+		if err := repository.Clear(ctx); err != nil {
+			return err
+		}
+
+		for _, user := range users {
+			if err := repository.AddUser(ctx, user); err != nil {
+				return err
+			}
+		}
+
+		return nil
 	}
+}
 
-	server := NewServer(usecase.NewDefaultUserCase(repository))
-	go func() {
-		log.Fatalf("server crashed: %v", server.Start())
-	}()
-
-	return port
+func testUser(number int) User {
+	return User{
+		Id:    fmt.Sprintf("user%d", number),
+		Name:  fmt.Sprintf("name%d", number),
+		Email: fmt.Sprintf("email%d", number),
+	}
 }

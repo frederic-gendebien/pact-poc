@@ -13,7 +13,7 @@ type UserUseCase interface {
 	FindUserById(ctx context.Context, userId string) (model.User, error)
 }
 
-func NewDefaultUserCase(repository domain.UserRepository) *DefaultUserCase {
+func NewUserUseCase(repository domain.UserRepository) *DefaultUserCase {
 	return &DefaultUserCase{
 		repository: repository,
 	}
