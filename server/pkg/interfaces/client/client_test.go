@@ -121,7 +121,7 @@ func TestClientPact_FindUserById(t *testing.T) {
 
 func setup() (dsl.Pact, *Client) {
 	log.Println("clearing pact folders")
-	if err := os.RemoveAll("../../../../test/pact"); err != nil {
+	if err := os.RemoveAll("../../../../tests/pact"); err != nil {
 		log.Fatalln("could not clear pact folders: ", err)
 	}
 	log.Println("pact folders clearing done")
@@ -130,8 +130,8 @@ func setup() (dsl.Pact, *Client) {
 	pact := dsl.Pact{
 		Consumer:                 "user-client",
 		Provider:                 "user-server",
-		LogDir:                   "../../../../test/pact/logs",
-		PactDir:                  "../../../../test/pact/pacts",
+		LogDir:                   "../../../../tests/pact/logs",
+		PactDir:                  "../../../../tests/pact/pacts",
 		LogLevel:                 "INFO",
 		DisableToolValidityCheck: true,
 	}

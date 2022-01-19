@@ -16,10 +16,10 @@ import (
 
 var (
 	dir, _  = os.Getwd()
-	pactDir = fmt.Sprintf("%s/../../../test/pact", dir)
-	logDir  = fmt.Sprintf("%s/../../../test/pact/log", dir)
+	pactDir = fmt.Sprintf("%s/../../../tests/pact", dir)
+	logDir  = fmt.Sprintf("%s/../../../tests/pact/log", dir)
 	pact    = dsl.Pact{
-		Provider:                 "PocPactServer",
+		Provider:                 "pactpocServer",
 		LogDir:                   logDir,
 		PactDir:                  pactDir,
 		DisableToolValidityCheck: true,

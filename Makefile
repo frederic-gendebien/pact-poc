@@ -20,6 +20,14 @@ deps:
 build:
 	go build -v ./...
 
+test:
+	go test -v -cover ./...
+
+publish-pacts:
+	pact-broker publish tests/pact/pacts \
+		--broker-base-url=$(PACT_BROKER_URL) \
+		--consumer-app-version=$(VERSION)
+
 docker-build:
 	$(MAKE) -C infrastructure docker-build
 	$(MAKE) -C server docker-build

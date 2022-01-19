@@ -31,7 +31,7 @@ services:
       - napoleongames
 
   reverseproxy:
-    image: pocpact/reverseproxy:latest
+    image: pactpoc/reverseproxy:latest
     ports:
       - "8081:80"
     networks:
