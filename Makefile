@@ -26,6 +26,7 @@ test:
 publish-pacts:
 	pact-broker publish tests/pact/pacts \
 		--broker-base-url=$(PACT_BROKER_URL) \
+		--broker-token=$(PACT_BROKER_TOKEN) \
 		--consumer-app-version=$(VERSION) \
 		--tag=master
 

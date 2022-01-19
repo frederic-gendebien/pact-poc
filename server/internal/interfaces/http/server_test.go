@@ -14,15 +14,32 @@ import (
 	"testing"
 )
 
+const (
+	pactBrokerUrlPropertyName   = "PACT_BROKER_URL"
+	pactBrokerTokenPropertyName = "PACT_BROKER_TOKEN"
+)
+
 var (
-	port       int
-	pact       dsl.Pact
-	repository *inmemory.UserRepository
-	useCase    usecase.UserUseCase
-	server     *Server
+	pactBrokerUrl   string
+	pactBrokerToken string
+	port            int
+	pact            dsl.Pact
+	repository      *inmemory.UserRepository
+	useCase         usecase.UserUseCase
+	server          *Server
 )
 
 func init() {
+	pactBrokerUrl = os.Getenv(pactBrokerUrlPropertyName)
+	if pactBrokerUrl == "" {
+		log.Fatalln("missing environment property: ", pactBrokerUrlPropertyName)
+	}
+
+	pactBrokerToken = os.Getenv(pactBrokerTokenPropertyName)
+	if pactBrokerUrl == "" {
+		log.Fatalln("missing environment property: ", pactBrokerTokenPropertyName)
+	}
+
 	var err error
 	port, err = utils.GetFreePort()
 	if err != nil {
@@ -53,9 +70,8 @@ func TestServerPact(t *testing.T) {
 	_, err := pact.VerifyProvider(t, types.VerifyRequest{
 		ProviderBaseURL:            fmt.Sprintf("http://127.0.0.1:%d", port),
 		Tags:                       []string{"master"},
-		BrokerURL:                  "http://localhost:9292",
-		BrokerUsername:             "",
-		BrokerPassword:             "",
+		BrokerURL:                  pactBrokerUrl,
+		BrokerToken:                pactBrokerToken,
 		FailIfNoPactsFound:         true,
 		ProviderVersion:            "0.0.1",
 		PublishVerificationResults: true,

@@ -379,3 +379,83 @@ I, [2022-01-19T14:11:51.054595 #65890]  INFO -- : Sending DELETE request to path
 D, [2022-01-19T14:11:51.054687 #65890] DEBUG -- : body :
 I, [2022-01-19T14:11:51.056507 #65890]  INFO -- : Received response with status: 404, headers: {"Content-Length"=>"47", "Content-Type"=>"application/json; charset=utf-8", "Date"=>"Wed, 19 Jan 2022 13:11:51 GMT"}, see debug logs for body
 D, [2022-01-19T14:11:51.056559 #65890] DEBUG -- : body: {"message":"user with id: user1 was not found"}
+I, [2022-01-19T21:58:16.339737 #49488]  INFO -- : Running example 'Verifying a pact between user-client and user-server Given The user1 does not exist A new user registration request for user1 with PUT /users returns a response which has status code 201'
+I, [2022-01-19T21:58:16.347619 #49488]  INFO -- : Sending PUT request to path: "/users" with headers: {"HTTP_ACCEPT"=>"application/json; charset=utf-8", "CONTENT_TYPE"=>"application/json; charset=utf-8", "HTTP_X_PACT_ORIGINAL_HEADER_NAMES"=>"Accept,Content-Type", "X_PACT_PROVIDER_STATES"=>[{"name"=>"The user1 does not exist"}]}, see debug logs for body
+D, [2022-01-19T21:58:16.347686 #49488] DEBUG -- : body :{"id":"user1","name":"name1","email":"email1"}
+I, [2022-01-19T21:58:16.359901 #49488]  INFO -- : Received response with status: 201, headers: {"Content-Length"=>"0", "Date"=>"Wed, 19 Jan 2022 20:58:16 GMT"}, see debug logs for body
+D, [2022-01-19T21:58:16.359953 #49488] DEBUG -- : body: 
+I, [2022-01-19T21:58:16.360940 #49488]  INFO -- : Running example 'Verifying a pact between user-client and user-server Given The user1 exists already A new user registration request for user1 with PUT /users returns a response which has status code 400'
+I, [2022-01-19T21:58:16.362690 #49488]  INFO -- : Sending PUT request to path: "/users" with headers: {"HTTP_ACCEPT"=>"application/json; charset=utf-8", "CONTENT_TYPE"=>"application/json; charset=utf-8", "HTTP_X_PACT_ORIGINAL_HEADER_NAMES"=>"Accept,Content-Type", "X_PACT_PROVIDER_STATES"=>[{"name"=>"The user1 exists already"}]}, see debug logs for body
+D, [2022-01-19T21:58:16.362732 #49488] DEBUG -- : body :{"id":"user1","name":"name1","email":"email1"}
+I, [2022-01-19T21:58:16.364421 #49488]  INFO -- : Received response with status: 400, headers: {"Content-Length"=>"48", "Content-Type"=>"application/json; charset=utf-8", "Date"=>"Wed, 19 Jan 2022 20:58:16 GMT"}, see debug logs for body
+D, [2022-01-19T21:58:16.364457 #49488] DEBUG -- : body: {"message":"user with id: user1 already exists"}
+I, [2022-01-19T21:58:16.365253 #49488]  INFO -- : Running example 'Verifying a pact between user-client and user-server Given Many users exist A list all users request with GET /users returns a response which has status code 200'
+I, [2022-01-19T21:58:16.366767 #49488]  INFO -- : Sending GET request to path: "/users" with headers: {"HTTP_ACCEPT"=>"application/json; charset=utf-8", "HTTP_X_PACT_ORIGINAL_HEADER_NAMES"=>"Accept", "X_PACT_PROVIDER_STATES"=>[{"name"=>"Many users exist"}]}, see debug logs for body
+D, [2022-01-19T21:58:16.366790 #49488] DEBUG -- : body :
+I, [2022-01-19T21:58:16.368268 #49488]  INFO -- : Received response with status: 200, headers: {"Content-Length"=>"236", "Content-Type"=>"application/json; charset=utf-8", "Date"=>"Wed, 19 Jan 2022 20:58:16 GMT"}, see debug logs for body
+D, [2022-01-19T21:58:16.368295 #49488] DEBUG -- : body: [{"id":"user1","name":"name1","email":"email1"},{"id":"user2","name":"name2","email":"email2"},{"id":"user3","name":"name3","email":"email3"},{"id":"user4","name":"name4","email":"email4"},{"id":"user5","name":"name5","email":"email5"}]
+I, [2022-01-19T21:58:16.368891 #49488]  INFO -- : Running example 'Verifying a pact between user-client and user-server Given No users exist A list all users request with GET /users returns a response which has status code 200'
+I, [2022-01-19T21:58:16.370259 #49488]  INFO -- : Sending GET request to path: "/users" with headers: {"HTTP_ACCEPT"=>"application/json; charset=utf-8", "HTTP_X_PACT_ORIGINAL_HEADER_NAMES"=>"Accept", "X_PACT_PROVIDER_STATES"=>[{"name"=>"No users exist"}]}, see debug logs for body
+D, [2022-01-19T21:58:16.370284 #49488] DEBUG -- : body :
+I, [2022-01-19T21:58:16.371685 #49488]  INFO -- : Received response with status: 200, headers: {"Content-Length"=>"2", "Content-Type"=>"application/json; charset=utf-8", "Date"=>"Wed, 19 Jan 2022 20:58:16 GMT"}, see debug logs for body
+D, [2022-01-19T21:58:16.371725 #49488] DEBUG -- : body: []
+I, [2022-01-19T21:58:16.372249 #49488]  INFO -- : Running example 'Verifying a pact between user-client and user-server Given The user1 exists A find user1 by id request with GET /users/user1 returns a response which has status code 200'
+I, [2022-01-19T21:58:16.373772 #49488]  INFO -- : Sending GET request to path: "/users/user1" with headers: {"HTTP_ACCEPT"=>"application/json; charset=utf-8", "HTTP_X_PACT_ORIGINAL_HEADER_NAMES"=>"Accept", "X_PACT_PROVIDER_STATES"=>[{"name"=>"The user1 exists"}]}, see debug logs for body
+D, [2022-01-19T21:58:16.373792 #49488] DEBUG -- : body :
+I, [2022-01-19T21:58:16.375336 #49488]  INFO -- : Received response with status: 200, headers: {"Content-Length"=>"46", "Content-Type"=>"application/json; charset=utf-8", "Date"=>"Wed, 19 Jan 2022 20:58:16 GMT"}, see debug logs for body
+D, [2022-01-19T21:58:16.375359 #49488] DEBUG -- : body: {"id":"user1","name":"name1","email":"email1"}
+I, [2022-01-19T21:58:16.375886 #49488]  INFO -- : Running example 'Verifying a pact between user-client and user-server Given The user1 does not exist A find user1 by id request with GET /users/user1 returns a response which has status code 404'
+I, [2022-01-19T21:58:16.377314 #49488]  INFO -- : Sending GET request to path: "/users/user1" with headers: {"HTTP_ACCEPT"=>"application/json; charset=utf-8", "HTTP_X_PACT_ORIGINAL_HEADER_NAMES"=>"Accept", "X_PACT_PROVIDER_STATES"=>[{"name"=>"The user1 does not exist"}]}, see debug logs for body
+D, [2022-01-19T21:58:16.377331 #49488] DEBUG -- : body :
+I, [2022-01-19T21:58:16.378868 #49488]  INFO -- : Received response with status: 404, headers: {"Content-Length"=>"47", "Content-Type"=>"application/json; charset=utf-8", "Date"=>"Wed, 19 Jan 2022 20:58:16 GMT"}, see debug logs for body
+D, [2022-01-19T21:58:16.378898 #49488] DEBUG -- : body: {"message":"user with id: user1 was not found"}
+I, [2022-01-19T21:58:16.379463 #49488]  INFO -- : Running example 'Verifying a pact between user-client and user-server Given The user1 exists A delete user1 request with DELETE /users/user1 returns a response which has status code 202'
+I, [2022-01-19T21:58:16.381000 #49488]  INFO -- : Sending DELETE request to path: "/users/user1" with headers: {"HTTP_ACCEPT"=>"application/json; charset=utf-8", "HTTP_X_PACT_ORIGINAL_HEADER_NAMES"=>"Accept", "X_PACT_PROVIDER_STATES"=>[{"name"=>"The user1 exists"}]}, see debug logs for body
+D, [2022-01-19T21:58:16.381025 #49488] DEBUG -- : body :
+I, [2022-01-19T21:58:16.382488 #49488]  INFO -- : Received response with status: 202, headers: {"Content-Length"=>"0", "Date"=>"Wed, 19 Jan 2022 20:58:16 GMT"}, see debug logs for body
+D, [2022-01-19T21:58:16.382512 #49488] DEBUG -- : body: 
+I, [2022-01-19T21:58:16.382864 #49488]  INFO -- : Running example 'Verifying a pact between user-client and user-server Given The user1 does not exist A delete user1 request with DELETE /users/user1 returns a response which has status code 404'
+I, [2022-01-19T21:58:16.384211 #49488]  INFO -- : Sending DELETE request to path: "/users/user1" with headers: {"HTTP_ACCEPT"=>"application/json; charset=utf-8", "HTTP_X_PACT_ORIGINAL_HEADER_NAMES"=>"Accept", "X_PACT_PROVIDER_STATES"=>[{"name"=>"The user1 does not exist"}]}, see debug logs for body
+D, [2022-01-19T21:58:16.384232 #49488] DEBUG -- : body :
+I, [2022-01-19T21:58:16.385558 #49488]  INFO -- : Received response with status: 404, headers: {"Content-Length"=>"47", "Content-Type"=>"application/json; charset=utf-8", "Date"=>"Wed, 19 Jan 2022 20:58:16 GMT"}, see debug logs for body
+D, [2022-01-19T21:58:16.385583 #49488] DEBUG -- : body: {"message":"user with id: user1 was not found"}
+I, [2022-01-19T21:58:54.315802 #49881]  INFO -- : Running example 'Verifying a pact between user-client and user-server Given The user1 does not exist A new user registration request for user1 with PUT /users returns a response which has status code 201'
+I, [2022-01-19T21:58:54.321671 #49881]  INFO -- : Sending PUT request to path: "/users" with headers: {"HTTP_ACCEPT"=>"application/json; charset=utf-8", "CONTENT_TYPE"=>"application/json; charset=utf-8", "HTTP_X_PACT_ORIGINAL_HEADER_NAMES"=>"Accept,Content-Type", "X_PACT_PROVIDER_STATES"=>[{"name"=>"The user1 does not exist"}]}, see debug logs for body
+D, [2022-01-19T21:58:54.321717 #49881] DEBUG -- : body :{"id":"user1","name":"name1","email":"email1"}
+I, [2022-01-19T21:58:54.332091 #49881]  INFO -- : Received response with status: 201, headers: {"Content-Length"=>"0", "Date"=>"Wed, 19 Jan 2022 20:58:54 GMT"}, see debug logs for body
+D, [2022-01-19T21:58:54.332130 #49881] DEBUG -- : body: 
+I, [2022-01-19T21:58:54.332865 #49881]  INFO -- : Running example 'Verifying a pact between user-client and user-server Given The user1 exists already A new user registration request for user1 with PUT /users returns a response which has status code 400'
+I, [2022-01-19T21:58:54.335032 #49881]  INFO -- : Sending PUT request to path: "/users" with headers: {"HTTP_ACCEPT"=>"application/json; charset=utf-8", "CONTENT_TYPE"=>"application/json; charset=utf-8", "HTTP_X_PACT_ORIGINAL_HEADER_NAMES"=>"Accept,Content-Type", "X_PACT_PROVIDER_STATES"=>[{"name"=>"The user1 exists already"}]}, see debug logs for body
+D, [2022-01-19T21:58:54.335071 #49881] DEBUG -- : body :{"id":"user1","name":"name1","email":"email1"}
+I, [2022-01-19T21:58:54.337220 #49881]  INFO -- : Received response with status: 400, headers: {"Content-Length"=>"48", "Content-Type"=>"application/json; charset=utf-8", "Date"=>"Wed, 19 Jan 2022 20:58:54 GMT"}, see debug logs for body
+D, [2022-01-19T21:58:54.337245 #49881] DEBUG -- : body: {"message":"user with id: user1 already exists"}
+I, [2022-01-19T21:58:54.337904 #49881]  INFO -- : Running example 'Verifying a pact between user-client and user-server Given Many users exist A list all users request with GET /users returns a response which has status code 200'
+I, [2022-01-19T21:58:54.339465 #49881]  INFO -- : Sending GET request to path: "/users" with headers: {"HTTP_ACCEPT"=>"application/json; charset=utf-8", "HTTP_X_PACT_ORIGINAL_HEADER_NAMES"=>"Accept", "X_PACT_PROVIDER_STATES"=>[{"name"=>"Many users exist"}]}, see debug logs for body
+D, [2022-01-19T21:58:54.339486 #49881] DEBUG -- : body :
+I, [2022-01-19T21:58:54.341173 #49881]  INFO -- : Received response with status: 200, headers: {"Content-Length"=>"236", "Content-Type"=>"application/json; charset=utf-8", "Date"=>"Wed, 19 Jan 2022 20:58:54 GMT"}, see debug logs for body
+D, [2022-01-19T21:58:54.341194 #49881] DEBUG -- : body: [{"id":"user1","name":"name1","email":"email1"},{"id":"user2","name":"name2","email":"email2"},{"id":"user3","name":"name3","email":"email3"},{"id":"user4","name":"name4","email":"email4"},{"id":"user5","name":"name5","email":"email5"}]
+I, [2022-01-19T21:58:54.341763 #49881]  INFO -- : Running example 'Verifying a pact between user-client and user-server Given No users exist A list all users request with GET /users returns a response which has status code 200'
+I, [2022-01-19T21:58:54.343197 #49881]  INFO -- : Sending GET request to path: "/users" with headers: {"HTTP_ACCEPT"=>"application/json; charset=utf-8", "HTTP_X_PACT_ORIGINAL_HEADER_NAMES"=>"Accept", "X_PACT_PROVIDER_STATES"=>[{"name"=>"No users exist"}]}, see debug logs for body
+D, [2022-01-19T21:58:54.343217 #49881] DEBUG -- : body :
+I, [2022-01-19T21:58:54.344693 #49881]  INFO -- : Received response with status: 200, headers: {"Content-Length"=>"2", "Content-Type"=>"application/json; charset=utf-8", "Date"=>"Wed, 19 Jan 2022 20:58:54 GMT"}, see debug logs for body
+D, [2022-01-19T21:58:54.344714 #49881] DEBUG -- : body: []
+I, [2022-01-19T21:58:54.345210 #49881]  INFO -- : Running example 'Verifying a pact between user-client and user-server Given The user1 exists A find user1 by id request with GET /users/user1 returns a response which has status code 200'
+I, [2022-01-19T21:58:54.346566 #49881]  INFO -- : Sending GET request to path: "/users/user1" with headers: {"HTTP_ACCEPT"=>"application/json; charset=utf-8", "HTTP_X_PACT_ORIGINAL_HEADER_NAMES"=>"Accept", "X_PACT_PROVIDER_STATES"=>[{"name"=>"The user1 exists"}]}, see debug logs for body
+D, [2022-01-19T21:58:54.346584 #49881] DEBUG -- : body :
+I, [2022-01-19T21:58:54.348022 #49881]  INFO -- : Received response with status: 200, headers: {"Content-Length"=>"46", "Content-Type"=>"application/json; charset=utf-8", "Date"=>"Wed, 19 Jan 2022 20:58:54 GMT"}, see debug logs for body
+D, [2022-01-19T21:58:54.348045 #49881] DEBUG -- : body: {"id":"user1","name":"name1","email":"email1"}
+I, [2022-01-19T21:58:54.348557 #49881]  INFO -- : Running example 'Verifying a pact between user-client and user-server Given The user1 does not exist A find user1 by id request with GET /users/user1 returns a response which has status code 404'
+I, [2022-01-19T21:58:54.349947 #49881]  INFO -- : Sending GET request to path: "/users/user1" with headers: {"HTTP_ACCEPT"=>"application/json; charset=utf-8", "HTTP_X_PACT_ORIGINAL_HEADER_NAMES"=>"Accept", "X_PACT_PROVIDER_STATES"=>[{"name"=>"The user1 does not exist"}]}, see debug logs for body
+D, [2022-01-19T21:58:54.349970 #49881] DEBUG -- : body :
+I, [2022-01-19T21:58:54.351327 #49881]  INFO -- : Received response with status: 404, headers: {"Content-Length"=>"47", "Content-Type"=>"application/json; charset=utf-8", "Date"=>"Wed, 19 Jan 2022 20:58:54 GMT"}, see debug logs for body
+D, [2022-01-19T21:58:54.351347 #49881] DEBUG -- : body: {"message":"user with id: user1 was not found"}
+I, [2022-01-19T21:58:54.351822 #49881]  INFO -- : Running example 'Verifying a pact between user-client and user-server Given The user1 exists A delete user1 request with DELETE /users/user1 returns a response which has status code 202'
+I, [2022-01-19T21:58:54.353122 #49881]  INFO -- : Sending DELETE request to path: "/users/user1" with headers: {"HTTP_ACCEPT"=>"application/json; charset=utf-8", "HTTP_X_PACT_ORIGINAL_HEADER_NAMES"=>"Accept", "X_PACT_PROVIDER_STATES"=>[{"name"=>"The user1 exists"}]}, see debug logs for body
+D, [2022-01-19T21:58:54.353140 #49881] DEBUG -- : body :
+I, [2022-01-19T21:58:54.354530 #49881]  INFO -- : Received response with status: 202, headers: {"Content-Length"=>"0", "Date"=>"Wed, 19 Jan 2022 20:58:54 GMT"}, see debug logs for body
+D, [2022-01-19T21:58:54.354551 #49881] DEBUG -- : body: 
+I, [2022-01-19T21:58:54.354792 #49881]  INFO -- : Running example 'Verifying a pact between user-client and user-server Given The user1 does not exist A delete user1 request with DELETE /users/user1 returns a response which has status code 404'
+I, [2022-01-19T21:58:54.356055 #49881]  INFO -- : Sending DELETE request to path: "/users/user1" with headers: {"HTTP_ACCEPT"=>"application/json; charset=utf-8", "HTTP_X_PACT_ORIGINAL_HEADER_NAMES"=>"Accept", "X_PACT_PROVIDER_STATES"=>[{"name"=>"The user1 does not exist"}]}, see debug logs for body
+D, [2022-01-19T21:58:54.356074 #49881] DEBUG -- : body :
+I, [2022-01-19T21:58:54.357406 #49881]  INFO -- : Received response with status: 404, headers: {"Content-Length"=>"47", "Content-Type"=>"application/json; charset=utf-8", "Date"=>"Wed, 19 Jan 2022 20:58:54 GMT"}, see debug logs for body
+D, [2022-01-19T21:58:54.357429 #49881] DEBUG -- : body: {"message":"user with id: user1 was not found"}
