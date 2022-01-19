@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"github.com/pact-foundation/pact-go/dsl"
 	"log"
+	gohttp "net/http"
 	"os"
 	"reflect"
 	"testing"
@@ -38,16 +39,16 @@ func TestClientPact_RegisterNewUser(t *testing.T) {
 		pact.Interactions = nil
 		pact.AddInteraction().
 			Given("The user1 does not exist").
-			UponReceiving("A new user registration for user1").
+			UponReceiving("A new user registration request for user1").
 			WithRequest(dsl.Request{
-				Method:  "PUT",
+				Method:  gohttp.MethodPut,
 				Path:    dsl.Term("/users", "^/users$"),
 				Query:   nil,
 				Headers: requestHeadersWithBody(),
 				Body:    testUser(1),
 			}).
 			WillRespondWith(dsl.Response{
-				Status:  201,
+				Status:  gohttp.StatusCreated,
 				Headers: responseHeaders(),
 				Body:    nil,
 			})
@@ -59,24 +60,115 @@ func TestClientPact_RegisterNewUser(t *testing.T) {
 	t.Run("Register An Existing User", func(t *testing.T) {
 		pact.Interactions = nil
 		pact.AddInteraction().
-			Given("The user2 exists already").
-			UponReceiving("A new user registration for user2").
+			Given("The user1 exists already").
+			UponReceiving("A new user registration request for user1").
 			WithRequest(dsl.Request{
-				Method:  "PUT",
+				Method:  gohttp.MethodPut,
 				Path:    dsl.Term("/users", "^/users$"),
 				Query:   nil,
 				Headers: requestHeadersWithBody(),
-				Body:    testUser(2),
+				Body:    testUser(1),
 			}).
 			WillRespondWith(dsl.Response{
-				Status:  400,
+				Status:  gohttp.StatusBadRequest,
 				Headers: responseHeaders(),
-				Body:    errorResponse("user2 exists already"),
+				Body:    errorResponse("user1 exists already"),
 			})
 
 		verify(t, pact, func() error {
-			if err := userClient.RegisterNewUser(context.Background(), testUser(2)); err == nil || !errors.Is(err, model.BadRequestError{}) {
-				return fmt.Errorf("a bad request was expected, but found: %v", err)
+			if err := userClient.RegisterNewUser(context.Background(), testUser(1)); err == nil || !errors.Is(err, model.BadRequestError{}) {
+				return fmt.Errorf("a %v was expected, but found: %v", model.BadRequestError{}, err)
+			}
+
+			return nil
+		})
+	})
+}
+
+func TestClientPact_ListAllUsers(t *testing.T) {
+	t.Run("List All Users When There Are Many", func(t *testing.T) {
+		pact.Interactions = nil
+		expectedUsers := []User{
+			testUser(1),
+			testUser(2),
+			testUser(3),
+			testUser(4),
+			testUser(5),
+		}
+		pact.AddInteraction().
+			Given("The many users exist").
+			UponReceiving("A list all users request").
+			WithRequest(dsl.Request{
+				Method:  gohttp.MethodGet,
+				Path:    dsl.Term("/users", "^/users$"),
+				Query:   nil,
+				Headers: requestHeadersWithoutBody(),
+				Body:    nil,
+			}).
+			WillRespondWith(dsl.Response{
+				Status:  gohttp.StatusOK,
+				Headers: responseHeaders(),
+				Body:    expectedUsers,
+			})
+
+		verify(t, pact, func() error {
+			next := make(chan bool)
+			defer close(next)
+
+			users, err := userClient.ListAllUsers(context.Background(), next)
+			if err != nil {
+				return fmt.Errorf("could not list all users: %v", err)
+			}
+
+			userList := make([]User, 0, 5)
+			for user := range users {
+				userList = append(userList, NewUserFrom(user))
+				next <- true
+			}
+
+			if !reflect.DeepEqual(userList, expectedUsers) {
+				return fmt.Errorf("expected: %v, but got %v", expectedUsers, userList)
+			}
+
+			return nil
+		})
+	})
+	t.Run("List All Users When There Are None", func(t *testing.T) {
+		pact.Interactions = nil
+		expectedUsers := make([]User, 0)
+		pact.AddInteraction().
+			Given("No users exist").
+			UponReceiving("A list all users request").
+			WithRequest(dsl.Request{
+				Method:  gohttp.MethodGet,
+				Path:    dsl.Term("/users", "^/users$"),
+				Query:   nil,
+				Headers: requestHeadersWithoutBody(),
+				Body:    nil,
+			}).
+			WillRespondWith(dsl.Response{
+				Status:  gohttp.StatusOK,
+				Headers: responseHeaders(),
+				Body:    expectedUsers,
+			})
+
+		verify(t, pact, func() error {
+			next := make(chan bool)
+			defer close(next)
+
+			users, err := userClient.ListAllUsers(context.Background(), next)
+			if err != nil {
+				return fmt.Errorf("could not list all users: %v", err)
+			}
+
+			userList := make([]User, 0, 5)
+			for user := range users {
+				userList = append(userList, NewUserFrom(user))
+				next <- true
+			}
+
+			if !reflect.DeepEqual(userList, expectedUsers) {
+				return fmt.Errorf("expected: %v, but got %v", expectedUsers, userList)
 			}
 
 			return nil
@@ -92,14 +184,14 @@ func TestClientPact_FindUserById(t *testing.T) {
 			Given("The user1 exists").
 			UponReceiving("A find user1 by id request").
 			WithRequest(dsl.Request{
-				Method:  "GET",
+				Method:  gohttp.MethodGet,
 				Path:    dsl.Term("/users/user1", "^/users/[a-z0-9-]+$"),
 				Query:   nil,
 				Headers: requestHeadersWithoutBody(),
 				Body:    nil,
 			}).
 			WillRespondWith(dsl.Response{
-				Status:  200,
+				Status:  gohttp.StatusOK,
 				Headers: responseHeaders(),
 				Body:    expectedUser,
 			})
@@ -112,6 +204,88 @@ func TestClientPact_FindUserById(t *testing.T) {
 
 			if !reflect.DeepEqual(user, NewUserFrom(expectedUser)) {
 				return fmt.Errorf("expected: %v, but got %v", expectedUser, user)
+			}
+
+			return nil
+		})
+	})
+	t.Run("Find An Unknown User By Id", func(t *testing.T) {
+		pact.Interactions = nil
+		pact.AddInteraction().
+			Given("The user1 does not exist").
+			UponReceiving("A find user1 by id request").
+			WithRequest(dsl.Request{
+				Method:  gohttp.MethodGet,
+				Path:    dsl.Term("/users/user1", "^/users/[a-z0-9-]+$"),
+				Query:   nil,
+				Headers: requestHeadersWithoutBody(),
+				Body:    nil,
+			}).
+			WillRespondWith(dsl.Response{
+				Status:  gohttp.StatusNotFound,
+				Headers: responseHeaders(),
+				Body:    errorResponse("user not found"),
+			})
+
+		verify(t, pact, func() error {
+			if _, err := userClient.FindUserById(context.Background(), testUser(1).GetId()); err == nil || !errors.Is(err, model.NotFoundError{}) {
+				return fmt.Errorf("a %v was expected, but found: %v", model.NotFoundError{}, err)
+			}
+
+			return nil
+		})
+	})
+}
+
+func TestClientPact_DeleteUser(t *testing.T) {
+	t.Run("Delete An Existing User", func(t *testing.T) {
+		pact.Interactions = nil
+		pact.AddInteraction().
+			Given("The user1 exists").
+			UponReceiving("A delete user1 request").
+			WithRequest(dsl.Request{
+				Method:  gohttp.MethodDelete,
+				Path:    dsl.Term("/users/user1", "^/users/[a-z0-9-]+$"),
+				Query:   nil,
+				Headers: requestHeadersWithoutBody(),
+				Body:    nil,
+			}).
+			WillRespondWith(dsl.Response{
+				Status:  gohttp.StatusAccepted,
+				Headers: responseHeaders(),
+				Body:    nil,
+			})
+
+		verify(t, pact, func() error {
+			err := userClient.DeleteUser(context.Background(), testUser(1).GetId())
+			if err != nil {
+				return fmt.Errorf("could not delete user: %v", err)
+			}
+
+			return nil
+		})
+	})
+	t.Run("Delete An Unknown User", func(t *testing.T) {
+		pact.Interactions = nil
+		pact.AddInteraction().
+			Given("The user1 does not exist").
+			UponReceiving("A delete user1 request").
+			WithRequest(dsl.Request{
+				Method:  gohttp.MethodDelete,
+				Path:    dsl.Term("/users/user1", "^/users/[a-z0-9-]+$"),
+				Query:   nil,
+				Headers: requestHeadersWithoutBody(),
+				Body:    nil,
+			}).
+			WillRespondWith(dsl.Response{
+				Status:  gohttp.StatusNotFound,
+				Headers: responseHeaders(),
+				Body:    errorResponse("user not found"),
+			})
+
+		verify(t, pact, func() error {
+			if err := userClient.DeleteUser(context.Background(), testUser(1).GetId()); err == nil || !errors.Is(err, model.NotFoundError{}) {
+				return fmt.Errorf("a %v was expected, but found: %v", model.NotFoundError{}, err)
 			}
 
 			return nil
@@ -168,8 +342,8 @@ func responseHeaders() dsl.MapMatcher {
 	}
 }
 
-func testUser(number int) http.User {
-	return http.User{
+func testUser(number int) User {
+	return User{
 		Id:    fmt.Sprintf("user%d", number),
 		Name:  fmt.Sprintf("name%d", number),
 		Email: fmt.Sprintf("email%d", number),

@@ -92,6 +92,9 @@ func (c *Client) FindUserById(ctx context.Context, userId string) (model.User, e
 	}
 
 	user, err := bodyOrError(response, userProvider())
+	if err != nil {
+		return nil, err
+	}
 
-	return user.(model.User), err
+	return user.(model.User), nil
 }
