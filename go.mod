@@ -1,4 +1,4 @@
-module bitbucket.org/fredericgendebien/pact-poc
+module github.com/frederic-gendebien/pact-poc
 
 go 1.17
 
