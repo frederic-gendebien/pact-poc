@@ -22,7 +22,7 @@ func (n NewUserRegistered) GetDefinition() domain.EventDefinition {
 }
 
 func (n NewUserRegistered) GetEntityId() string {
-	return n.User.Id
+	return string(n.User.Id)
 }
 
 func (n NewUserRegistered) GetPayload() interface{} {

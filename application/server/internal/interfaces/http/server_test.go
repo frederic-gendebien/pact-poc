@@ -125,8 +125,8 @@ func repositoryWith(users ...model.User) types.StateHandler {
 
 func testUser(number int) model.User {
 	return model.User{
-		Id:    fmt.Sprintf("user%d", number),
+		Id:    model.UserId(fmt.Sprintf("user%d", number)),
 		Name:  fmt.Sprintf("name%d", number),
-		Email: fmt.Sprintf("email%d", number),
+		Email: model.Email(fmt.Sprintf("email%d", number)),
 	}
 }

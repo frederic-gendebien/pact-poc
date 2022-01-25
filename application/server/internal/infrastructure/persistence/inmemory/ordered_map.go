@@ -5,7 +5,7 @@ import (
 	"sort"
 )
 
-type OrderedMap map[string]model.User
+type OrderedMap map[model.UserId]model.User
 
 func (om OrderedMap) OrderedValues() []model.User {
 	if om == nil {

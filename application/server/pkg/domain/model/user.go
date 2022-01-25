@@ -1,9 +1,12 @@
 package model
 
+type UserId string
+type Email string
+
 type User struct {
-	Id    string `json:"id"`
+	Id    UserId `json:"id"`
 	Name  string `json:"name"`
-	Email string `json:"email"`
+	Email Email  `json:"email"`
 }
 
 func (u User) IsInvalid() bool {

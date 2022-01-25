@@ -21,7 +21,7 @@ var (
 
 func TestMain(m *testing.M) {
 	os.Exit(func() int {
-		pact, userClient = setup()
+		setup()
 		defer tearDown()
 
 		exitCode := m.Run()
@@ -293,15 +293,9 @@ func TestClientPact_DeleteUser(t *testing.T) {
 	})
 }
 
-func setup() (dsl.Pact, *Client) {
-	log.Println("clearing pact folders")
-	if err := os.RemoveAll("../../../../tests/pact"); err != nil {
-		log.Fatalln("could not clear pact folders: ", err)
-	}
-	log.Println("pact folders clearing done")
-
+func setup() {
 	log.Println("setup pact environment")
-	pact := dsl.Pact{
+	pact = dsl.Pact{
 		Consumer:                 "user-client",
 		Provider:                 "user-server",
 		LogDir:                   "../../../../tests/pact/logs",
@@ -310,10 +304,9 @@ func setup() (dsl.Pact, *Client) {
 		DisableToolValidityCheck: true,
 	}
 	pact.Setup(true)
-	userClient := NewClient(fmt.Sprintf("http://localhost:%d", pact.Server.Port))
+	userClient = NewClient(fmt.Sprintf("http://localhost:%d", pact.Server.Port))
 
 	log.Println("pact environment setup done")
-	return pact, userClient
 }
 
 func tearDown() {
@@ -348,9 +341,9 @@ func responseHeadersWithoutBody() dsl.MapMatcher {
 
 func testUser(number int) model.User {
 	return model.User{
-		Id:    fmt.Sprintf("user%d", number),
+		Id:    model.UserId(fmt.Sprintf("user%d", number)),
 		Name:  fmt.Sprintf("name%d", number),
-		Email: fmt.Sprintf("email%d", number),
+		Email: model.Email(fmt.Sprintf("email%d", number)),
 	}
 }
 

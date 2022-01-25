@@ -2,7 +2,7 @@ include ../../config.mk
 
 .PHONY: info clean build run docker-build docker-deploy docker-shell docker-undeploy
 
-SERVICE=server
+SERVICE=projection
 STACK=$(SERVICE)
 
 info:

@@ -1,11 +1,12 @@
 package events
 
 import (
+	"github.com/frederic-gendebien/pact-poc/application/server/pkg/domain/model"
 	"github.com/frederic-gendebien/pact-poc/lib/eventbus/domain"
 )
 
 type UserDeleted struct {
-	UserId string `json:"user_id"`
+	UserId model.UserId `json:"user_id"`
 }
 
 func (u UserDeleted) GetDomain() string {
@@ -21,7 +22,7 @@ func (u UserDeleted) GetDefinition() domain.EventDefinition {
 }
 
 func (u UserDeleted) GetEntityId() string {
-	return u.UserId
+	return string(u.UserId)
 }
 
 func (u UserDeleted) GetPayload() interface{} {

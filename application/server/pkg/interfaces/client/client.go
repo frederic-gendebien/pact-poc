@@ -37,9 +37,9 @@ func (c *Client) RegisterNewUser(ctx context.Context, newUser model.User) error 
 	return err
 }
 
-func (c *Client) DeleteUser(ctx context.Context, userId string) error {
+func (c *Client) DeleteUser(ctx context.Context, userId model.UserId) error {
 	response, err := c.client.R().
-		SetPathParam("user_id", userId).
+		SetPathParam("user_id", string(userId)).
 		Delete("/users/{user_id}")
 
 	if err != nil {
@@ -82,9 +82,9 @@ func (c *Client) ListAllUsers(ctx context.Context, next <-chan bool) (<-chan mod
 	return results, nil
 }
 
-func (c *Client) FindUserById(ctx context.Context, userId string) (model.User, error) {
+func (c *Client) FindUserById(ctx context.Context, userId model.UserId) (model.User, error) {
 	response, err := c.client.R().
-		SetPathParam("user_id", userId).
+		SetPathParam("user_id", string(userId)).
 		Get("/users/{user_id}")
 
 	if err != nil {

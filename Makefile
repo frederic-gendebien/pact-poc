@@ -1,10 +1,13 @@
 include config.mk
 
+PACT_FOLDERS=/application/tests/pact/pacts
+
 info:
 	@echo "group: $(GROUP)"
 
 clean:
 	go clean -cache -testcache
+	-rm $(PACT_FOLDERS)
 	$(MAKE) -C infrastructure clean
 	$(MAKE) -C application clean
 
@@ -24,15 +27,20 @@ build:
 test: publish-pacts
 	go test -v -cover ./...
 
-/application/tests/pact/pacts:
+pact-consumers-tests: $(PACT_FOLDERS)
+
+$(PACT_FOLDERS): client-pact-test projection-pact-test
+
+client-pact-test:
 	go test -v github.com/frederic-gendebien/pact-poc/application/server/pkg/interfaces/client
 
-client-pact-test: /application/tests/pact/pacts
+projection-pact-test:
+	go test -v github.com/frederic-gendebien/pact-poc/application/projection/internal/interfaces/eventbus
 
 server-pact-test:
 	go test -v github.com/frederic-gendebien/pact-poc/application/server/internal/interfaces/http
 
-publish-pacts: client-pact-test
+publish-pacts: $(PACT_FOLDERS)
 	@pact-broker publish application/tests/pact/pacts \
 		--broker-base-url=$(PACT_BROKER_URL) \
 		--broker-token=$(PACT_BROKER_TOKEN) \

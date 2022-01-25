@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/frederic-gendebien/pact-poc/application/server/internal/domain"
+	"github.com/frederic-gendebien/pact-poc/application/server/internal/domain/repository"
 	"github.com/frederic-gendebien/pact-poc/application/server/internal/infrastructure/persistence"
 	"github.com/frederic-gendebien/pact-poc/application/server/internal/interfaces/http"
 	"github.com/frederic-gendebien/pact-poc/application/server/internal/usecase"
@@ -12,7 +12,7 @@ import (
 
 var (
 	configuration config.Configuration
-	repository    domain.UserRepository
+	repo          repository.UserRepository
 	eventBus      eventbus.EventBus
 	useCase       usecase.UserUseCase
 	server        *http.Server
@@ -20,9 +20,9 @@ var (
 
 func init() {
 	configuration = config.NewConfiguration()
-	repository = persistence.NewUserRepository(configuration)
+	repo = persistence.NewUserRepository(configuration)
 	eventBus = eventbus.NewEventBus(configuration)
-	useCase = usecase.NewUserUseCase(repository, eventBus)
+	useCase = usecase.NewUserUseCase(repo, eventBus)
 	server = http.NewServer(useCase)
 }
 
@@ -35,7 +35,7 @@ func main() {
 
 func teardown() {
 	log.Println("tearing down server resources")
-	_ = repository.Close()
+	_ = repo.Close()
 	_ = eventBus.Close()
 	_ = configuration.Close()
 }

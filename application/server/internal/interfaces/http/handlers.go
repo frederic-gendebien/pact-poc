@@ -39,7 +39,7 @@ func deleteUser(useCase usecase.UserUseCase) gin.HandlerFunc {
 			return
 		}
 
-		acceptedOrFail(ctx, useCase.DeleteUser(ctx, userId))
+		acceptedOrFail(ctx, useCase.DeleteUser(ctx, model.UserId(userId)))
 	}
 }
 
@@ -100,7 +100,7 @@ func getUser(useCase usecase.UserUseCase) gin.HandlerFunc {
 			return
 		}
 
-		user, err := useCase.FindUserById(ctx, userId)
+		user, err := useCase.FindUserById(ctx, model.UserId(userId))
 
 		okOrFail(ctx, err, func() interface{} {
 			return user
