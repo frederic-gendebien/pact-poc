@@ -88,7 +88,7 @@ func TestClientPact_RegisterNewUser(t *testing.T) {
 func TestClientPact_ListAllUsers(t *testing.T) {
 	t.Run("List All Users When There Are Many", func(t *testing.T) {
 		pact.Interactions = nil
-		expectedUsers := []User{
+		expectedUsers := []model.User{
 			testUser(1),
 			testUser(2),
 			testUser(3),
@@ -120,9 +120,9 @@ func TestClientPact_ListAllUsers(t *testing.T) {
 				return fmt.Errorf("could not list all users: %v", err)
 			}
 
-			userList := make([]User, 0, 5)
+			userList := make([]model.User, 0, 5)
 			for user := range users {
-				userList = append(userList, NewUserFrom(user))
+				userList = append(userList, user)
 				next <- true
 			}
 
@@ -135,7 +135,7 @@ func TestClientPact_ListAllUsers(t *testing.T) {
 	})
 	t.Run("List All Users When There Are None", func(t *testing.T) {
 		pact.Interactions = nil
-		expectedUsers := make([]User, 0)
+		expectedUsers := make([]model.User, 0)
 		pact.AddInteraction().
 			Given("No users exist").
 			UponReceiving("A list all users request").
@@ -161,9 +161,9 @@ func TestClientPact_ListAllUsers(t *testing.T) {
 				return fmt.Errorf("could not list all users: %v", err)
 			}
 
-			userList := make([]User, 0, 5)
+			userList := make([]model.User, 0, 5)
 			for user := range users {
-				userList = append(userList, NewUserFrom(user))
+				userList = append(userList, user)
 				next <- true
 			}
 
@@ -197,12 +197,12 @@ func TestClientPact_FindUserById(t *testing.T) {
 			})
 
 		verify(t, pact, func() error {
-			user, err := userClient.FindUserById(context.Background(), expectedUser.GetId())
+			user, err := userClient.FindUserById(context.Background(), expectedUser.Id)
 			if err != nil {
 				return fmt.Errorf("could not find user by id: %v", err)
 			}
 
-			if !reflect.DeepEqual(user, NewUserFrom(expectedUser)) {
+			if !reflect.DeepEqual(user, expectedUser) {
 				return fmt.Errorf("expected: %v, but got %v", expectedUser, user)
 			}
 
@@ -228,7 +228,7 @@ func TestClientPact_FindUserById(t *testing.T) {
 			})
 
 		verify(t, pact, func() error {
-			if _, err := userClient.FindUserById(context.Background(), testUser(1).GetId()); err == nil || !errors.Is(err, model.NotFoundError{}) {
+			if _, err := userClient.FindUserById(context.Background(), testUser(1).Id); err == nil || !errors.Is(err, model.NotFoundError{}) {
 				return fmt.Errorf("a %v was expected, but found: %v", model.NotFoundError{}, err)
 			}
 
@@ -257,7 +257,7 @@ func TestClientPact_DeleteUser(t *testing.T) {
 			})
 
 		verify(t, pact, func() error {
-			err := userClient.DeleteUser(context.Background(), testUser(1).GetId())
+			err := userClient.DeleteUser(context.Background(), testUser(1).Id)
 			if err != nil {
 				return fmt.Errorf("could not delete user: %v", err)
 			}
@@ -284,7 +284,7 @@ func TestClientPact_DeleteUser(t *testing.T) {
 			})
 
 		verify(t, pact, func() error {
-			if err := userClient.DeleteUser(context.Background(), testUser(1).GetId()); err == nil || !errors.Is(err, model.NotFoundError{}) {
+			if err := userClient.DeleteUser(context.Background(), testUser(1).Id); err == nil || !errors.Is(err, model.NotFoundError{}) {
 				return fmt.Errorf("a %v was expected, but found: %v", model.NotFoundError{}, err)
 			}
 
@@ -346,8 +346,8 @@ func responseHeadersWithoutBody() dsl.MapMatcher {
 	return dsl.MapMatcher{}
 }
 
-func testUser(number int) User {
-	return User{
+func testUser(number int) model.User {
+	return model.User{
 		Id:    fmt.Sprintf("user%d", number),
 		Name:  fmt.Sprintf("name%d", number),
 		Email: fmt.Sprintf("email%d", number),

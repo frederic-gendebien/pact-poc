@@ -5,7 +5,7 @@ func NewBadRequest(message string) BadRequestError {
 }
 
 type BadRequestError struct {
-	Message string
+	Message string `json:"message"`
 }
 
 func (b BadRequestError) Error() string {
@@ -23,7 +23,7 @@ func NewNotFoundError(message string) NotFoundError {
 }
 
 type NotFoundError struct {
-	Message string
+	Message string `json:"message"`
 }
 
 func (b NotFoundError) Error() string {
@@ -44,8 +44,8 @@ func NewUnknownError(message string, err error) UnknownError {
 }
 
 type UnknownError struct {
-	Message string
-	Err     error
+	Message string `json:"message"`
+	Err     error  `json:"err"`
 }
 
 func (b UnknownError) Error() string {

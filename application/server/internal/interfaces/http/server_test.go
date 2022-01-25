@@ -3,8 +3,12 @@ package http
 import (
 	"context"
 	"fmt"
-	"github.com/frederic-gendebien/pact-poc/application/server/internal/infrastructure/persistence/inmemory"
+	inmemorypers "github.com/frederic-gendebien/pact-poc/application/server/internal/infrastructure/persistence/inmemory"
 	"github.com/frederic-gendebien/pact-poc/application/server/internal/usecase"
+	"github.com/frederic-gendebien/pact-poc/application/server/pkg/domain/model"
+	"github.com/frederic-gendebien/pact-poc/lib/config"
+	"github.com/frederic-gendebien/pact-poc/lib/config/environment"
+	inmemoryevb "github.com/frederic-gendebien/pact-poc/lib/eventbus/inmemory"
 	"github.com/pact-foundation/pact-go/dsl"
 	"github.com/pact-foundation/pact-go/types"
 	"github.com/pact-foundation/pact-go/utils"
@@ -20,25 +24,21 @@ const (
 )
 
 var (
+	configuration   config.Configuration
 	pactBrokerUrl   string
 	pactBrokerToken string
 	port            int
 	pact            dsl.Pact
-	repository      *inmemory.UserRepository
+	repository      *inmemorypers.UserRepository
+	eventBus        *inmemoryevb.EventBus
 	useCase         usecase.UserUseCase
 	server          *Server
 )
 
 func init() {
-	pactBrokerUrl = os.Getenv(pactBrokerUrlPropertyName)
-	if pactBrokerUrl == "" {
-		log.Fatalln("missing environment property: ", pactBrokerUrlPropertyName)
-	}
-
-	pactBrokerToken = os.Getenv(pactBrokerTokenPropertyName)
-	if pactBrokerUrl == "" {
-		log.Fatalln("missing environment property: ", pactBrokerTokenPropertyName)
-	}
+	configuration = environment.NewConfiguration()
+	pactBrokerUrl = configuration.GetMandatoryValue(pactBrokerUrlPropertyName)
+	pactBrokerToken = configuration.GetMandatoryValue(pactBrokerTokenPropertyName)
 
 	var err error
 	port, err = utils.GetFreePort()
@@ -58,8 +58,9 @@ func init() {
 		LogLevel:                 "INFO",
 	}
 
-	repository = inmemory.NewUserRepository()
-	useCase = usecase.NewUserUseCase(repository)
+	repository = inmemorypers.NewUserRepository()
+	eventBus = inmemoryevb.NewEventBus()
+	useCase = usecase.NewUserUseCase(repository, eventBus)
 	server = NewServer(useCase)
 	go func() {
 		log.Println(server.Start())
@@ -105,7 +106,7 @@ func emptyRepository() types.StateHandler {
 	}
 }
 
-func repositoryWith(users ...User) types.StateHandler {
+func repositoryWith(users ...model.User) types.StateHandler {
 	return func() error {
 		ctx := context.Background()
 		if err := repository.Clear(ctx); err != nil {
@@ -122,8 +123,8 @@ func repositoryWith(users ...User) types.StateHandler {
 	}
 }
 
-func testUser(number int) User {
-	return User{
+func testUser(number int) model.User {
+	return model.User{
 		Id:    fmt.Sprintf("user%d", number),
 		Name:  fmt.Sprintf("name%d", number),
 		Email: fmt.Sprintf("email%d", number),

@@ -9,6 +9,7 @@ import (
 )
 
 func NewUserRepository() *UserRepository {
+	log.Println("starting inmemory user repository")
 	return &UserRepository{
 		lock:  &sync.RWMutex{},
 		users: make(map[string]model.User),
@@ -21,7 +22,7 @@ type UserRepository struct {
 }
 
 func (r *UserRepository) Close() error {
-	log.Println("closing user repository")
+	log.Println("closing inmemory user repository")
 
 	return nil
 }
@@ -39,7 +40,7 @@ func (r *UserRepository) AddUser(ctx context.Context, newUser model.User) error 
 	r.lock.Lock()
 	defer r.lock.Unlock()
 
-	userId := newUser.GetId()
+	userId := newUser.Id
 	if _, present := r.users[userId]; present {
 		return model.NewBadRequest(fmt.Sprintf("user with id: %s already exists", userId))
 	}
@@ -89,7 +90,7 @@ func (r *UserRepository) GetUser(ctx context.Context, userId string) (model.User
 
 	user, present := r.users[userId]
 	if !present {
-		return nil, notFound(userId)
+		return model.User{}, notFound(userId)
 	}
 
 	return user, nil

@@ -2,7 +2,7 @@ package client
 
 import (
 	"context"
-	model2 "github.com/frederic-gendebien/pact-poc/application/server/pkg/domain/model"
+	"github.com/frederic-gendebien/pact-poc/application/server/pkg/domain/model"
 	"github.com/go-resty/resty/v2"
 )
 
@@ -23,13 +23,13 @@ func (c *Client) Close() error {
 	return nil
 }
 
-func (c *Client) RegisterNewUser(ctx context.Context, newUser model2.User) error {
+func (c *Client) RegisterNewUser(ctx context.Context, newUser model.User) error {
 	response, err := c.client.R().
-		SetBody(NewUserFrom(newUser)).
+		SetBody(newUser).
 		Put("/users")
 
 	if err != nil {
-		return model2.NewUnknownError("could not register new user", err)
+		return model.NewUnknownError("could not register new user", err)
 	}
 
 	_, err = bodyOrError(response, emptyBody())
@@ -43,7 +43,7 @@ func (c *Client) DeleteUser(ctx context.Context, userId string) error {
 		Delete("/users/{user_id}")
 
 	if err != nil {
-		return model2.NewUnknownError("could not delete user", err)
+		return model.NewUnknownError("could not delete user", err)
 	}
 
 	_, err = bodyOrError(response, emptyBody())
@@ -51,12 +51,12 @@ func (c *Client) DeleteUser(ctx context.Context, userId string) error {
 	return err
 }
 
-func (c *Client) ListAllUsers(ctx context.Context, next <-chan bool) (<-chan model2.User, error) {
+func (c *Client) ListAllUsers(ctx context.Context, next <-chan bool) (<-chan model.User, error) {
 	response, err := c.client.R().
 		Get("/users")
 
 	if err != nil {
-		return nil, model2.NewUnknownError("could not list all users", err)
+		return nil, model.NewUnknownError("could not list all users", err)
 	}
 
 	users, err := bodyOrError(response, usersProvider())
@@ -64,11 +64,11 @@ func (c *Client) ListAllUsers(ctx context.Context, next <-chan bool) (<-chan mod
 		return nil, err
 	}
 
-	results := make(chan model2.User)
+	results := make(chan model.User)
 	go func() {
 		defer close(results)
 
-		for _, user := range users.([]User) {
+		for _, user := range users.([]model.User) {
 			results <- user
 			select {
 			case needNext := <-next:
@@ -82,19 +82,19 @@ func (c *Client) ListAllUsers(ctx context.Context, next <-chan bool) (<-chan mod
 	return results, nil
 }
 
-func (c *Client) FindUserById(ctx context.Context, userId string) (model2.User, error) {
+func (c *Client) FindUserById(ctx context.Context, userId string) (model.User, error) {
 	response, err := c.client.R().
 		SetPathParam("user_id", userId).
 		Get("/users/{user_id}")
 
 	if err != nil {
-		return nil, model2.NewUnknownError("could not find user by id", err)
+		return model.User{}, model.NewUnknownError("could not find user by id", err)
 	}
 
 	user, err := bodyOrError(response, userProvider())
 	if err != nil {
-		return nil, err
+		return model.User{}, err
 	}
 
-	return user.(model2.User), nil
+	return user.(model.User), nil
 }

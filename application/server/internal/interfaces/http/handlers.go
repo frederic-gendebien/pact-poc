@@ -2,7 +2,7 @@ package http
 
 import (
 	"github.com/frederic-gendebien/pact-poc/application/server/internal/usecase"
-	model2 "github.com/frederic-gendebien/pact-poc/application/server/pkg/domain/model"
+	"github.com/frederic-gendebien/pact-poc/application/server/pkg/domain/model"
 	"github.com/gin-gonic/gin"
 	"strconv"
 )
@@ -21,9 +21,9 @@ func addUserHandlers(engine *gin.Engine, useCase usecase.UserUseCase) {
 
 func registerNewUser(useCase usecase.UserUseCase) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
-		newUser := User{}
+		newUser := model.User{}
 		if err := newUser.InvalidAfter(ctx.BindJSON(&newUser)); err != nil {
-			fail(ctx, model2.NewBadRequest(err.Error()))
+			fail(ctx, model.NewBadRequest(err.Error()))
 			return
 		}
 
@@ -35,7 +35,7 @@ func deleteUser(useCase usecase.UserUseCase) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		userId := ctx.Param("user_id")
 		if userId == "" {
-			fail(ctx, model2.NewBadRequest("wrong user id"))
+			fail(ctx, model.NewBadRequest("wrong user id"))
 			return
 		}
 
@@ -72,17 +72,17 @@ func minOrDefault(value string, maxValue int) int {
 	return intValue
 }
 
-func accumulateUsers(users <-chan model2.User, limit int, next chan<- bool) func() interface{} {
+func accumulateUsers(users <-chan model.User, limit int, next chan<- bool) func() interface{} {
 	return func() interface{} {
 		counter := 0
-		results := make([]User, 0, MaxLimit)
+		results := make([]model.User, 0, MaxLimit)
 
 		for user := range users {
 			if counter >= limit {
 				next <- false
 				break
 			} else {
-				results = append(results, NewUserFrom(user))
+				results = append(results, user)
 				counter++
 				next <- true
 			}
@@ -96,18 +96,14 @@ func getUser(useCase usecase.UserUseCase) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		userId := ctx.Param("user_id")
 		if userId == "" {
-			fail(ctx, model2.NewBadRequest("wrong user id"))
+			fail(ctx, model.NewBadRequest("wrong user id"))
 			return
 		}
 
 		user, err := useCase.FindUserById(ctx, userId)
 
-		okOrFail(ctx, err, lazyUserConversion(user))
-	}
-}
-
-func lazyUserConversion(user model2.User) func() interface{} {
-	return func() interface{} {
-		return NewUserFrom(user)
+		okOrFail(ctx, err, func() interface{} {
+			return user
+		})
 	}
 }

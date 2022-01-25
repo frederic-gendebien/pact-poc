@@ -22,7 +22,7 @@ func (om OrderedMap) OrderedValues() []model.User {
 	}
 
 	sort.Slice(users, func(i, j int) bool {
-		return users[i].GetId() < users[j].GetId()
+		return users[i].Id < users[j].Id
 	})
 
 	return users

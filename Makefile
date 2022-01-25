@@ -27,7 +27,12 @@ test: publish-pacts
 /application/tests/pact/pacts:
 	go test -v github.com/frederic-gendebien/pact-poc/application/server/pkg/interfaces/client
 
-publish-pacts: /application/tests/pact/pacts
+client-pact-test: /application/tests/pact/pacts
+
+server-pact-test:
+	go test -v github.com/frederic-gendebien/pact-poc/application/server/internal/interfaces/http
+
+publish-pacts: client-pact-test
 	@pact-broker publish application/tests/pact/pacts \
 		--broker-base-url=$(PACT_BROKER_URL) \
 		--broker-token=$(PACT_BROKER_TOKEN) \

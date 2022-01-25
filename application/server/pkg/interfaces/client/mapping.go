@@ -36,7 +36,7 @@ func emptyBody() func([]byte) (interface{}, error) {
 
 func userProvider() func([]byte) (interface{}, error) {
 	return func(bytes []byte) (interface{}, error) {
-		user := User{}
+		user := model.User{}
 		if err := json.Unmarshal(bytes, &user); err != nil {
 			return user, err
 		}
@@ -47,7 +47,7 @@ func userProvider() func([]byte) (interface{}, error) {
 
 func usersProvider() func([]byte) (interface{}, error) {
 	return func(bytes []byte) (interface{}, error) {
-		var users []User
+		var users []model.User
 		if err := json.Unmarshal(bytes, &users); err != nil {
 			return nil, err
 		}
