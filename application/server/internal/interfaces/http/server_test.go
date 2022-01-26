@@ -5,9 +5,11 @@ import (
 	"fmt"
 	inmemorypers "github.com/frederic-gendebien/pact-poc/application/server/internal/infrastructure/persistence/inmemory"
 	"github.com/frederic-gendebien/pact-poc/application/server/internal/usecase"
+	"github.com/frederic-gendebien/pact-poc/application/server/pkg/domain/events"
 	"github.com/frederic-gendebien/pact-poc/application/server/pkg/domain/model"
 	"github.com/frederic-gendebien/pact-poc/lib/config"
 	"github.com/frederic-gendebien/pact-poc/lib/config/environment"
+	"github.com/frederic-gendebien/pact-poc/lib/eventbus"
 	inmemoryevb "github.com/frederic-gendebien/pact-poc/lib/eventbus/inmemory"
 	"github.com/pact-foundation/pact-go/dsl"
 	"github.com/pact-foundation/pact-go/types"
@@ -28,9 +30,9 @@ var (
 	pactBrokerUrl   string
 	pactBrokerToken string
 	port            int
-	pact            dsl.Pact
 	repository      *inmemorypers.UserRepository
 	eventBus        *inmemoryevb.EventBus
+	eventSniffer    *eventbus.EventSniffer
 	useCase         usecase.UserUseCase
 	server          *Server
 )
@@ -50,25 +52,27 @@ func init() {
 		log.Fatalf("could not set port environment variable: %v", err)
 	}
 
-	pact = dsl.Pact{
-		Provider:                 "user-server",
+	repository = inmemorypers.NewUserRepository()
+	eventBus = inmemoryevb.NewEventBus()
+	eventSniffer = eventbus.NewEventSniffer(eventBus)
+	useCase = usecase.NewUserUseCase(repository, eventBus)
+	server = NewServer(useCase)
+
+	go func() {
+		log.Println(server.Start())
+	}()
+}
+
+func TestServerHTTPPact(t *testing.T) {
+	pact := dsl.Pact{
+		Provider:                 "user-server-http",
 		LogDir:                   "../../../../tests/pact/logs",
 		PactDir:                  "../../../../tests/pact/pacts",
 		DisableToolValidityCheck: true,
 		LogLevel:                 "INFO",
 	}
 
-	repository = inmemorypers.NewUserRepository()
-	eventBus = inmemoryevb.NewEventBus()
-	useCase = usecase.NewUserUseCase(repository, eventBus)
-	server = NewServer(useCase)
-	go func() {
-		log.Println(server.Start())
-	}()
-}
-
-func TestServerPact(t *testing.T) {
-	_, err := pact.VerifyProvider(t, types.VerifyRequest{
+	if _, err := pact.VerifyProvider(t, types.VerifyRequest{
 		ProviderBaseURL:            fmt.Sprintf("http://127.0.0.1:%d", port),
 		Tags:                       []string{"main"},
 		BrokerURL:                  pactBrokerUrl,
@@ -78,9 +82,57 @@ func TestServerPact(t *testing.T) {
 		ProviderTags:               []string{"main"},
 		PublishVerificationResults: true,
 		StateHandlers:              stateHandlers(),
-	})
-	if err != nil {
-		t.Fatalf("server verifaction failed: %v", err)
+
+		PactLogDir: "../../../../tests/pact/logs",
+	}); err != nil {
+		t.Fatalf("server http verifaction failed: %v", err)
+	}
+}
+
+func TestServerMessagePact(t *testing.T) {
+	eventSniffer.Clear()
+	if err := eventSniffer.Listen(events.NewUserRegistered{}); err != nil {
+		t.Fatal(err)
+	}
+
+	pact := dsl.Pact{
+		Provider:                 "user-server-async",
+		LogDir:                   "../../../../tests/pact/logs",
+		PactDir:                  "../../../../tests/pact/pacts",
+		DisableToolValidityCheck: true,
+		LogLevel:                 "INFO",
+	}
+
+	if _, err := pact.VerifyMessageProvider(t, dsl.VerifyMessageRequest{
+		Tags:                       []string{"main"},
+		BrokerURL:                  pactBrokerUrl,
+		BrokerToken:                pactBrokerToken,
+		PactURLs:                   nil,
+		ConsumerVersionSelectors:   nil,
+		PublishVerificationResults: true,
+		ProviderVersion:            "0.0.1",
+		ProviderTags:               []string{"main"},
+		MessageHandlers:            messageHandlers(),
+		StateHandlers:              messageStateHandlers(),
+		PactLogDir:                 "../../../../tests/pact/logs",
+	}); err != nil {
+		t.Fatalf("server message verifaction failed: %v", err)
+	}
+}
+
+func messageHandlers() dsl.MessageHandlers {
+	return dsl.MessageHandlers{
+		"a user1 registered event": func(message dsl.Message) (interface{}, error) {
+			return eventSniffer.GetEvents()[0], nil
+		},
+	}
+}
+
+func messageStateHandlers() dsl.StateHandlers {
+	return dsl.StateHandlers{
+		"user1 has been registered": func(state dsl.State) error {
+			return useCase.RegisterNewUser(context.Background(), testUser(1))
+		},
 	}
 }
 
@@ -106,7 +158,7 @@ func emptyRepository() types.StateHandler {
 	}
 }
 
-func repositoryWith(users ...model.User) types.StateHandler {
+func repositoryWith(users ...model.User) func() error {
 	return func() error {
 		ctx := context.Background()
 		if err := repository.Clear(ctx); err != nil {

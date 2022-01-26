@@ -40,12 +40,14 @@ projection-pact-test:
 server-pact-test:
 	go test -v github.com/frederic-gendebien/pact-poc/application/server/internal/interfaces/http
 
-publish-pacts: $(PACT_FOLDERS)
+pact-publish: $(PACT_FOLDERS)
 	@pact-broker publish application/tests/pact/pacts \
 		--broker-base-url=$(PACT_BROKER_URL) \
 		--broker-token=$(PACT_BROKER_TOKEN) \
 		--consumer-app-version=$(VERSION) \
 		--tag=main
+
+pact-provider-test: server-pact-test
 
 docker-build:
 	$(MAKE) -C infrastructure docker-build

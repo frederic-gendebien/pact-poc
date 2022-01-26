@@ -44,13 +44,9 @@ func TestProjectionPact_NewUserRegistered(t *testing.T) {
 		user := testUser(1)
 		message := pact.AddMessage()
 		message.Given("user1 has been registered").
-			ExpectsToReceive("a new user registered event").
-			WithContent(map[string]interface{}{
-				"id":    user.Id,
-				"name":  user.Name,
-				"email": user.Email,
-			}).
-			AsType(&events.NewUserRegistered{User: user})
+			ExpectsToReceive("a user1 registered event").
+			WithContent(&events.NewUserRegistered{User: user}).
+			AsType(&events.NewUserRegistered{})
 
 		if err := pact.VerifyMessageConsumer(t, message, expectUser(user)); err != nil {
 			t.Fatalf("Error on verify: %v", err)
@@ -90,7 +86,7 @@ func setup() {
 	log.Println("setup pact environment")
 	pact = dsl.Pact{
 		Consumer:                 "user-projection",
-		Provider:                 "user-server",
+		Provider:                 "user-server-async",
 		LogDir:                   "../../../../tests/pact/logs",
 		PactDir:                  "../../../../tests/pact/pacts",
 		LogLevel:                 "INFO",
