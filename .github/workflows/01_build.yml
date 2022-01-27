@@ -17,6 +17,8 @@ jobs:
         run: make build
       - name: Install Pact.io
         run: make pact-setup
+      - name: Add Pact.io in path
+        run: export PATH=$PATH:/opt/pact/bin
       - name: Test
         run: make -e test
 
