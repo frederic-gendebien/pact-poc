@@ -1,6 +1,7 @@
 package eventbus
 
 import (
+	"context"
 	"github.com/frederic-gendebien/pact-poc/lib/eventbus/domain"
 	"log"
 	"sync"
@@ -20,7 +21,10 @@ type EventSniffer struct {
 }
 
 func (e *EventSniffer) Listen(eventDefinition domain.EventDefinition) error {
-	return e.eventBus.Listen(NewEventListener(e, eventDefinition))
+	return e.eventBus.Listen(context.Background(),
+		"event-sniffer",
+		NewEventListener(e, eventDefinition),
+	)
 }
 
 func (e *EventSniffer) Clear() {
@@ -56,24 +60,16 @@ type EventListener struct {
 	eventDefinition domain.EventDefinition
 }
 
-func (e EventListener) GetName() string {
-	return "event-sniffer"
-}
-
-func (e EventListener) GetEvent() domain.EventDefinition {
+func (e EventListener) GetEventDefinition() domain.EventDefinition {
 	return e.eventDefinition
 }
 
-func (e EventListener) GetHandling() domain.Handler {
-	return func(event interface{}) error {
-		e.eventSniffer.AddEvent(event)
+func (e EventListener) ProcessEvent(event interface{}) error {
+	e.eventSniffer.AddEvent(event)
 
-		return nil
-	}
+	return nil
 }
 
-func (e EventListener) GetErrorHandling() domain.ErrorHandler {
-	return func(event interface{}, err error) {
-		log.Printf("could not process event: %v: %v", event, err)
-	}
+func (e EventListener) HandleError(event interface{}, err error) {
+	log.Printf("could not process event: %v: %v", event, err)
 }

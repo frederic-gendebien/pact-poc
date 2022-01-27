@@ -3,6 +3,10 @@ version: "3.8"
 services:
   server:
     image: "pactpoc/server:latest"
+    environment:
+      - PERSISTENCE_MODE=inmemory
+      - EVENTBUS_MODE=rabbitmq
+      - RABBITMQ_URL=amqp://guest:guest@rabbitmq:5672
     networks:
       - napoleongames
 

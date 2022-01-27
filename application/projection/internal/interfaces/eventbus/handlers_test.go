@@ -57,14 +57,15 @@ func TestProjectionPact_NewUserRegistered(t *testing.T) {
 func expectUser(registeredUser providermodel.User) dsl.MessageConsumer {
 	return func(message dsl.Message) error {
 		event := message.Content.(*events.NewUserRegistered)
-		if err := eventBus.Listen(
+		if err := eventBus.Listen(context.Background(),
+			ListenerName,
 			NewUserRegisteredHandler(useCase),
 			UserDeletedHandler(useCase),
 		); err != nil {
 			return err
 		}
 
-		if err := eventBus.Publish(event); err != nil {
+		if err := eventBus.Publish(context.Background(), event); err != nil {
 			return err
 		}
 

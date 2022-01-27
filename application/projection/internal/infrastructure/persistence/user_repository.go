@@ -13,7 +13,7 @@ const (
 )
 
 func NewUserRepository(configuration config.Configuration) repository.UserRepository {
-	mode := configuration.GetMandatoryValue(Mode)
+	mode := configuration.GetStringOrCrash(Mode)
 	switch mode {
 	case ModeInMemory:
 		return inmemory.NewUserRepository()

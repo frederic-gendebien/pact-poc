@@ -17,6 +17,10 @@ func (n NewUserRegistered) GetName() string {
 	return "NewUserRegistered"
 }
 
+func (n NewUserRegistered) GetType() interface{} {
+	return &NewUserRegistered{}
+}
+
 func (n NewUserRegistered) GetDefinition() domain.EventDefinition {
 	return n
 }

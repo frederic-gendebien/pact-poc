@@ -1,6 +1,7 @@
 package inmemory
 
 import (
+	"context"
 	"fmt"
 	"github.com/frederic-gendebien/pact-poc/lib/eventbus/domain"
 	"log"
@@ -22,11 +23,11 @@ func (e *EventBus) Close() error {
 	return nil
 }
 
-func (e *EventBus) Publish(event domain.Event) error {
+func (e *EventBus) Publish(ctx context.Context, event domain.Event) error {
 	if handlerGroups := e.handlers[eventKey(event.GetDefinition())]; handlerGroups != nil {
 		for _, handler := range handlerGroups.SelectHandlers() {
-			if err := handler.GetHandling()(event); err != nil {
-				handler.GetErrorHandling()(event, err)
+			if err := handler.ProcessEvent(event); err != nil {
+				handler.HandleError(event, err)
 			}
 		}
 	}
@@ -34,15 +35,15 @@ func (e *EventBus) Publish(event domain.Event) error {
 	return nil
 }
 
-func (e *EventBus) Listen(handlers ...domain.EventHandler) error {
+func (e *EventBus) Listen(ctx context.Context, listenerName string, handlers ...domain.EventHandler) error {
 	for _, handler := range handlers {
-		key := eventKey(handler.GetEvent())
+		key := eventKey(handler.GetEventDefinition())
 		handlerGroups := e.handlers[key]
 		if handlerGroups == nil {
 			handlerGroups = NewHandlerGroups()
 		}
 
-		handlerGroups.AddEventHandler(handler)
+		handlerGroups.AddEventHandler(listenerName, handler)
 		e.handlers[key] = handlerGroups
 	}
 

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"github.com/frederic-gendebien/pact-poc/application/projection/internal/domain/repository"
 	"github.com/frederic-gendebien/pact-poc/application/projection/internal/infrastructure/persistence"
 	handlers "github.com/frederic-gendebien/pact-poc/application/projection/internal/interfaces/eventbus"
@@ -32,7 +33,8 @@ func main() {
 
 	go func() {
 		log.Println("start consuming events")
-		if err := eventBus.Listen(
+		if err := eventBus.Listen(context.Background(),
+			handlers.ListenerName,
 			handlers.NewUserRegisteredHandler(useCase),
 			handlers.UserDeletedHandler(useCase),
 		); err != nil {

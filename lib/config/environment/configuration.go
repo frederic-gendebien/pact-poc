@@ -21,7 +21,7 @@ func (c Configuration) Close() error {
 	return nil
 }
 
-func (c Configuration) GetOptionalValue(name string, defaultProvider func() string) string {
+func (c Configuration) GetString(name string, defaultProvider func() string) string {
 	value := os.Getenv(name)
 	if value == "" {
 		return defaultProvider()
@@ -30,8 +30,8 @@ func (c Configuration) GetOptionalValue(name string, defaultProvider func() stri
 	return value
 }
 
-func (c Configuration) GetMandatoryValue(name string) string {
-	return c.GetOptionalValue(name, func() string {
+func (c Configuration) GetStringOrCrash(name string) string {
+	return c.GetString(name, func() string {
 		log.Fatalf("missing mandatory property: %s", name)
 		return ""
 	})

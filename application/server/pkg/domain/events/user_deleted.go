@@ -17,6 +17,10 @@ func (u UserDeleted) GetName() string {
 	return "UserDeleted"
 }
 
+func (u UserDeleted) GetType() interface{} {
+	return &UserDeleted{}
+}
+
 func (u UserDeleted) GetDefinition() domain.EventDefinition {
 	return u
 }

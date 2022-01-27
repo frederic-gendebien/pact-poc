@@ -17,8 +17,8 @@ func NewHandlerGroups() HandlerGroups {
 
 type HandlerGroups map[string]HandlerGroup
 
-func (h HandlerGroups) AddEventHandler(handler domain.EventHandler) {
-	h[handler.GetName()] = append(h[handler.GetName()], handler)
+func (h HandlerGroups) AddEventHandler(name string, handler domain.EventHandler) {
+	h[name] = append(h[name], handler)
 }
 
 func (h HandlerGroups) SelectHandlers() []domain.EventHandler {

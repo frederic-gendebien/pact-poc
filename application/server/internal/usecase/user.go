@@ -32,7 +32,7 @@ func (d *DefaultUserUseCase) RegisterNewUser(ctx context.Context, newUser model.
 		return err
 	}
 
-	return d.eventBus.Publish(events.NewUserRegistered{
+	return d.eventBus.Publish(ctx, events.NewUserRegistered{
 		User: newUser,
 	})
 }
@@ -42,7 +42,7 @@ func (d *DefaultUserUseCase) DeleteUser(ctx context.Context, userId model.UserId
 		return err
 	}
 
-	return d.eventBus.Publish(events.UserDeleted{
+	return d.eventBus.Publish(ctx, events.UserDeleted{
 		UserId: userId,
 	})
 }

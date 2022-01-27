@@ -3,6 +3,7 @@ package domain
 type EventDefinition interface {
 	GetDomain() string
 	GetName() string
+	GetType() interface{}
 }
 
 type Event interface {
@@ -12,11 +13,7 @@ type Event interface {
 }
 
 type EventHandler interface {
-	GetName() string
-	GetEvent() EventDefinition
-	GetHandling() Handler
-	GetErrorHandling() ErrorHandler
+	GetEventDefinition() EventDefinition
+	ProcessEvent(interface{}) error
+	HandleError(interface{}, error)
 }
-
-type Handler func(interface{}) error
-type ErrorHandler func(interface{}, error)

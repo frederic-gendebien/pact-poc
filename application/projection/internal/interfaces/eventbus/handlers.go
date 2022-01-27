@@ -9,6 +9,10 @@ import (
 	"log"
 )
 
+const (
+	ListenerName = "projection"
+)
+
 func NewUserRegisteredHandler(useCase usecase.UserProjectionUseCase) eventbus.EventHandler {
 	return NewListener(
 		events.NewUserRegistered{},
@@ -29,7 +33,7 @@ func UserDeletedHandler(useCase usecase.UserProjectionUseCase) eventbus.EventHan
 	)
 }
 
-func logError() eventbus.ErrorHandler {
+func logError() func(event interface{}, err error) {
 	return func(event interface{}, err error) {
 		log.Printf("error processing event: %v: %v", event, err)
 	}
@@ -37,8 +41,8 @@ func logError() eventbus.ErrorHandler {
 
 func NewListener(
 	event eventbus.EventDefinition,
-	handling eventbus.Handler,
-	errorHandling eventbus.ErrorHandler,
+	handling func(interface{}) error,
+	errorHandling func(interface{}, error),
 ) *Listener {
 	return &Listener{
 		event:         event,
@@ -49,22 +53,22 @@ func NewListener(
 
 type Listener struct {
 	event         eventbus.EventDefinition
-	handling      eventbus.Handler
-	errorHandling eventbus.ErrorHandler
+	handling      func(interface{}) error
+	errorHandling func(interface{}, error)
 }
 
 func (l *Listener) GetName() string {
 	return "projection"
 }
 
-func (l *Listener) GetEvent() eventbus.EventDefinition {
+func (l *Listener) GetEventDefinition() eventbus.EventDefinition {
 	return l.event
 }
 
-func (l *Listener) GetHandling() eventbus.Handler {
-	return l.handling
+func (l *Listener) ProcessEvent(event interface{}) error {
+	return l.handling(event)
 }
 
-func (l *Listener) GetErrorHandling() eventbus.ErrorHandler {
-	return l.errorHandling
+func (l *Listener) HandleError(event interface{}, err error) {
+	l.errorHandling(event, err)
 }

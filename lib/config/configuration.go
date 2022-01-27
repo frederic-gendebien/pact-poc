@@ -28,6 +28,6 @@ func NewConfiguration() Configuration {
 
 type Configuration interface {
 	io.Closer
-	GetOptionalValue(name string, defaultProvider func() string) string
-	GetMandatoryValue(name string) string
+	GetString(name string, defaultProvider func() string) string
+	GetStringOrCrash(name string) string
 }

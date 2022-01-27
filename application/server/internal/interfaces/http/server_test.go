@@ -39,8 +39,8 @@ var (
 
 func init() {
 	configuration = environment.NewConfiguration()
-	pactBrokerUrl = configuration.GetMandatoryValue(pactBrokerUrlPropertyName)
-	pactBrokerToken = configuration.GetMandatoryValue(pactBrokerTokenPropertyName)
+	pactBrokerUrl = configuration.GetStringOrCrash(pactBrokerUrlPropertyName)
+	pactBrokerToken = configuration.GetStringOrCrash(pactBrokerTokenPropertyName)
 
 	var err error
 	port, err = utils.GetFreePort()

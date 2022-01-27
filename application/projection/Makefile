@@ -54,3 +54,5 @@ swarm-undeploy:
 	docker stack rm $(STACK)
 
 swarm-redeploy: swarm-undeploy swarm-deploy
+
+swarm-update: docker-build docker-kill
