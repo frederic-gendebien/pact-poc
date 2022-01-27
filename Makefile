@@ -11,9 +11,9 @@ clean:
 	$(MAKE) -C infrastructure clean
 	$(MAKE) -C application clean
 
-configure: pact deps
+configure: pact-setup deps
 
-pact:
+pact-setup:
 	@echo "--- Installing Pact CLI dependencies"
 	cd /opt/; \
 	curl -fsSL https://raw.githubusercontent.com/pact-foundation/pact-ruby-standalone/master/install.sh | bash
@@ -24,8 +24,7 @@ deps:
 build:
 	go build -v ./...
 
-test: publish-pacts
-	go test -v -cover ./...
+test: pact-publish pact-provider-test
 
 pact-consumers-tests: $(PACT_FOLDERS)
 
