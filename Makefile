@@ -1,6 +1,6 @@
 include config.mk
 
-PACT_FOLDERS=/application/tests/pact/pacts
+PACT_FOLDERS=application/tests/pact/pacts
 
 info:
 	@echo "group: $(GROUP)"
