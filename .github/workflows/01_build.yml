@@ -3,7 +3,7 @@ on: push
 jobs:
   build:
     runs-on: ubuntu-latest
-    container: fredericgendebien/golang:pact-alpine
+    container: fredericgendebien/golang:pact-bullseye
     env:
       PACT_BROKER_URL: ${{ secrets.PACT_BROKER_URL }}
       PACT_BROKER_TOKEN: ${{ secrets.PACT_BROKER_TOKEN }}

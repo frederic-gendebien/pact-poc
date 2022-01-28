@@ -1,10 +1,7 @@
-FROM golang:alpine
+FROM golang:bullseye
 
-RUN apk update; \
-    apk add build-base; \
-    apk add bash; \
-    apk add make; \
-    apk add curl
+RUN apt update; \
+    apt install -y build-essential
 
 RUN cd /opt/; \
     curl -fsSL https://raw.githubusercontent.com/pact-foundation/pact-ruby-standalone/master/install.sh | bash

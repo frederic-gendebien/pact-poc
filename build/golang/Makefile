@@ -1,6 +1,6 @@
 REGISTRY=fredericgendebien
 IMAGE=golang
-TAG=pact-alpine
+TAG=pact-bullseye
 
 login:
 	docker login
@@ -13,4 +13,4 @@ push: login build
 	docker push $(REGISTRY)/$(IMAGE):$(TAG)
 
 shell: build
-	docker run -ti $(IMAGE):$(TAG) /bin/sh
+	docker run -ti --rm $(IMAGE):$(TAG) /bin/bash
