@@ -1,6 +1,7 @@
 FROM golang:alpine
 
 RUN apk update; \
+    apk add build-base; \
     apk add make; \
     apk add curl
 
