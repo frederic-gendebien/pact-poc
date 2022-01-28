@@ -20,5 +20,5 @@ jobs:
       - name: Add Pact.io in path
         run: export PATH=$PATH:/opt/pact/bin
       - name: Test
-        run: make -e test
+        run: echo $PATH; ls /opt/; ls /opt/pact
 
