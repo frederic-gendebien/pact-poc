@@ -72,7 +72,7 @@ func TestClientPact_RegisterNewUser(t *testing.T) {
 			WillRespondWith(dsl.Response{
 				Status:  gohttp.StatusBadRequest,
 				Headers: responseHeadersWithBody(),
-				Body:    errorResponse("user with id: user1 already exists"),
+				Body:    errorResponse("user email : email1 already exists"),
 			})
 
 		verify(t, pact, func() error {

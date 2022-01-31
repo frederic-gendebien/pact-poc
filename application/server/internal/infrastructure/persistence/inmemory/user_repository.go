@@ -11,14 +11,16 @@ import (
 func NewUserRepository() *UserRepository {
 	log.Println("starting inmemory user repository")
 	return &UserRepository{
-		lock:  &sync.RWMutex{},
-		users: make(map[model.UserId]model.User),
+		lock:   &sync.RWMutex{},
+		users:  make(map[model.UserId]model.User),
+		emails: make(map[model.Email]model.UserId),
 	}
 }
 
 type UserRepository struct {
-	lock  *sync.RWMutex
-	users map[model.UserId]model.User
+	lock   *sync.RWMutex
+	users  map[model.UserId]model.User
+	emails map[model.Email]model.UserId
 }
 
 func (r *UserRepository) Close() error {
@@ -32,6 +34,7 @@ func (r *UserRepository) Clear(ctx context.Context) error {
 	defer r.lock.Unlock()
 
 	r.users = make(map[model.UserId]model.User)
+	r.emails = make(map[model.Email]model.UserId)
 
 	return nil
 }
@@ -40,12 +43,18 @@ func (r *UserRepository) AddUser(ctx context.Context, newUser model.User) error 
 	r.lock.Lock()
 	defer r.lock.Unlock()
 
+	email := newUser.Email
+	if _, present := r.emails[email]; present {
+		return model.NewBadRequest(fmt.Sprintf("user email : %s already exists", email))
+	}
+
 	userId := newUser.Id
 	if _, present := r.users[userId]; present {
 		return model.NewBadRequest(fmt.Sprintf("user with id: %s already exists", userId))
 	}
 
 	r.users[userId] = newUser
+	r.emails[email] = userId
 
 	return nil
 }
@@ -54,13 +63,14 @@ func (r *UserRepository) DeleteUser(ctx context.Context, userId model.UserId) er
 	r.lock.Lock()
 	defer r.lock.Unlock()
 
-	if _, present := r.users[userId]; !present {
-		return notFound(userId)
+	if user, present := r.users[userId]; present {
+		delete(r.users, userId)
+		delete(r.emails, user.Email)
+
+		return nil
 	}
 
-	delete(r.users, userId)
-
-	return nil
+	return notFound(userId)
 }
 
 func (r *UserRepository) ListAllUsers(ctx context.Context, next <-chan bool) (<-chan model.User, error) {
