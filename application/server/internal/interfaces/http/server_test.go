@@ -91,7 +91,10 @@ func TestServerHTTPPact(t *testing.T) {
 
 func TestServerMessagePact(t *testing.T) {
 	eventSniffer.Clear()
-	if err := eventSniffer.Listen(events.NewUserRegistered{}); err != nil {
+	if err := eventSniffer.Listen(
+		events.NewUserRegistered{},
+		events.UserDetailsCorrected{},
+	); err != nil {
 		t.Fatal(err)
 	}
 
@@ -123,7 +126,10 @@ func TestServerMessagePact(t *testing.T) {
 func messageHandlers() dsl.MessageHandlers {
 	return dsl.MessageHandlers{
 		"a user1 registered event": func(message dsl.Message) (interface{}, error) {
-			return eventSniffer.GetEvents()[0], nil
+			return eventSniffer.GetAndClearEvents()[0], nil
+		},
+		"a user1 details corrected event": func(message dsl.Message) (interface{}, error) {
+			return eventSniffer.GetAndClearEvents()[0], nil
 		},
 	}
 }
@@ -132,6 +138,9 @@ func messageStateHandlers() dsl.StateHandlers {
 	return dsl.StateHandlers{
 		"user1 has been registered": func(state dsl.State) error {
 			return useCase.RegisterNewUser(context.Background(), testUser(1))
+		},
+		"user1 details have been corrected": func(state dsl.State) error {
+			return useCase.CorrectUserDetails(context.Background(), testUser(1).Id, newTestUserDetails(1))
 		},
 	}
 }

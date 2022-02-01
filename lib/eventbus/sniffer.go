@@ -20,10 +20,15 @@ type EventSniffer struct {
 	events   []interface{}
 }
 
-func (e *EventSniffer) Listen(eventDefinition domain.EventDefinition) error {
+func (e *EventSniffer) Listen(eventDefinitions ...domain.EventDefinition) error {
+	eventHandlers := make([]domain.EventHandler, 0, len(eventDefinitions))
+	for _, eventDefinition := range eventDefinitions {
+		eventHandlers = append(eventHandlers, NewEventListener(e, eventDefinition))
+	}
+
 	return e.eventBus.Listen(context.Background(),
 		"event-sniffer",
-		NewEventListener(e, eventDefinition),
+		eventHandlers...,
 	)
 }
 
@@ -46,6 +51,15 @@ func (e *EventSniffer) GetEvents() []interface{} {
 	defer e.lock.RUnlock()
 
 	return e.events
+}
+
+func (e *EventSniffer) GetAndClearEvents() []interface{} {
+	e.lock.RLock()
+	defer e.lock.RUnlock()
+	events := e.events
+	e.events = nil
+
+	return events
 }
 
 func NewEventListener(eventSniffer *EventSniffer, eventDefinition domain.EventDefinition) *EventListener {

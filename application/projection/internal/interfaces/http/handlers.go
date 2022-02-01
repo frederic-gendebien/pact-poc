@@ -13,25 +13,19 @@ const (
 
 func addUserHandlers(engine *gin.Engine, useCase usecase.UserProjectionUseCase) {
 	users := engine.Group("/users")
-	users.GET("", listOrFindUsers(useCase))
+	users.GET("", findUsers(useCase))
 }
 
-func listOrFindUsers(useCase usecase.UserProjectionUseCase) gin.HandlerFunc {
+func findUsers(useCase usecase.UserProjectionUseCase) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
-		if email := ctx.Query("email"); email != "" {
-			user, err := useCase.FindUserByEmail(ctx, model.Email(email))
+		if text := ctx.Query("text"); text != "" {
+			users, err := useCase.FindUsersByText(ctx, text)
 			okOrFail(ctx, err, func() interface{} {
-				return user
+				return users
 			})
-		} else {
-			limit := minOrDefault(ctx.Query("limit"), MaxLimit)
-			next := make(chan bool)
-			defer close(next)
-
-			users, err := useCase.ListAllUsers(ctx, next)
-
-			okOrFail(ctx, err, accumulateUsers(users, limit, next))
 		}
+
+		fail(ctx, model.NewBadRequest("missing mandatory 'text' query param"))
 	}
 }
 

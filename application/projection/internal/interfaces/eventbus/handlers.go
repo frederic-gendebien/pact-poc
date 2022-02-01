@@ -17,7 +17,17 @@ func NewUserRegisteredHandler(useCase usecase.UserProjectionUseCase) eventbus.Ev
 	return NewListener(
 		events.NewUserRegistered{},
 		func(event interface{}) error {
-			return useCase.AddUser(context.Background(), projectionUser(event.(*events.NewUserRegistered).User))
+			return useCase.IndexUser(context.Background(), projectionUser(event.(*events.NewUserRegistered).User))
+		},
+		logError(),
+	)
+}
+
+func UserDetailsCorrectedHandler(useCase usecase.UserProjectionUseCase) eventbus.EventHandler {
+	return NewListener(
+		events.UserDetailsCorrected{},
+		func(event interface{}) error {
+			return useCase.IndexUser(context.Background(), partialUserFrom(event.(*events.UserDetailsCorrected)))
 		},
 		logError(),
 	)

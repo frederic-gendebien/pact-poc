@@ -10,16 +10,16 @@ import (
 
 func NewUserRepository() *UserRepository {
 	return &UserRepository{
-		lock:   &sync.RWMutex{},
-		emails: make(map[model.UserId]model.Email),
-		users:  make(map[model.Email]model.User),
+		lock:     &sync.RWMutex{},
+		patterns: make(map[string][]model.UserId),
+		users:    make(map[model.UserId]model.User),
 	}
 }
 
 type UserRepository struct {
-	lock   *sync.RWMutex
-	emails map[model.UserId]model.Email
-	users  map[model.Email]model.User
+	lock     *sync.RWMutex
+	patterns map[string][]model.UserId
+	users    map[model.UserId]model.User
 }
 
 func (u *UserRepository) Close() error {
@@ -28,23 +28,36 @@ func (u *UserRepository) Close() error {
 	return nil
 }
 
-func (u *UserRepository) AddUser(ctx context.Context, user model.User) error {
+func (u *UserRepository) IndexUser(ctx context.Context, user model.User) error {
 	u.lock.Lock()
 	defer u.lock.Unlock()
 
-	u.emails[user.Id] = user.Email
-	u.users[user.Email] = user
+	resultingUser, present := u.users[user.Id]
+	if present {
+		resultingUser = resultingUser.UpdateWith(user)
+	} else {
+		resultingUser = user
+	}
+
+	u.users[resultingUser.Id] = resultingUser
+	u.addPattern(ctx, resultingUser.Id, resultingUser.Name)
+	u.addPattern(ctx, resultingUser.Id, string(resultingUser.Email))
 
 	return nil
+}
+
+func (u *UserRepository) addPattern(ctx context.Context, userId model.UserId, text string) {
+	if text != "" {
+		u.patterns[text] = append(u.patterns[text], userId)
+	}
 }
 
 func (u *UserRepository) DeleteUserById(ctx context.Context, userId model.UserId) error {
 	u.lock.Lock()
 	defer u.lock.Unlock()
 
-	if email, present := u.emails[userId]; present {
-		delete(u.users, email)
-		delete(u.emails, userId)
+	if _, present := u.users[userId]; present {
+		delete(u.users, userId)
 
 		return nil
 	}
@@ -52,34 +65,18 @@ func (u *UserRepository) DeleteUserById(ctx context.Context, userId model.UserId
 	return model.NewNotFoundError(fmt.Sprintf("user with id: %s was not found", userId))
 }
 
-func (u *UserRepository) ListAllUsers(ctx context.Context, next <-chan bool) (<-chan model.User, error) {
-	users := make(chan model.User)
-	go func() {
-		u.lock.RLock()
-		defer u.lock.RUnlock()
-		defer close(users)
-
-		for _, user := range u.users {
-			users <- user
-			select {
-			case needNext := <-next:
-				if !needNext {
-					break
-				}
-			}
-		}
-	}()
-
-	return users, nil
-}
-
-func (u *UserRepository) FindUserByEmail(ctx context.Context, email model.Email) (model.User, error) {
+func (u *UserRepository) FindUsersByText(ctx context.Context, text string) ([]model.User, error) {
 	u.lock.RLock()
 	defer u.lock.RUnlock()
 
-	if user, present := u.users[email]; present {
-		return user, nil
+	users := make([]model.User, 0, 2)
+	if userIds := u.patterns[text]; userIds != nil {
+		for _, userId := range userIds {
+			if user, present := u.users[userId]; present {
+				users = append(users, user)
+			}
+		}
 	}
 
-	return model.User{}, model.NewNotFoundError(fmt.Sprintf("user with email: %s was not found", email))
+	return users, nil
 }

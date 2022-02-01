@@ -8,8 +8,7 @@ import (
 
 type UserRepository interface {
 	io.Closer
-	AddUser(ctx context.Context, user model.User) error
+	IndexUser(ctx context.Context, user model.User) error
 	DeleteUserById(ctx context.Context, userId model.UserId) error
-	ListAllUsers(ctx context.Context, next <-chan bool) (<-chan model.User, error)
-	FindUserByEmail(ctx context.Context, email model.Email) (model.User, error)
+	FindUsersByText(ctx context.Context, text string) ([]model.User, error)
 }
