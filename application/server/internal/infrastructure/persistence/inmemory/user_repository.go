@@ -59,6 +59,18 @@ func (r *UserRepository) AddUser(ctx context.Context, newUser model.User) error 
 	return nil
 }
 
+func (r *UserRepository) UpdateUser(ctx context.Context, userId model.UserId, update func(user model.User) model.User) error {
+	r.lock.Lock()
+	defer r.lock.Unlock()
+
+	if user, present := r.users[userId]; present {
+		r.users[userId] = update(user)
+		return nil
+	}
+
+	return notFound(userId)
+}
+
 func (r *UserRepository) DeleteUser(ctx context.Context, userId model.UserId) error {
 	r.lock.Lock()
 	defer r.lock.Unlock()

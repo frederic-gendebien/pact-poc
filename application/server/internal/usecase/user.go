@@ -10,6 +10,7 @@ import (
 
 type UserUseCase interface {
 	RegisterNewUser(ctx context.Context, newUser model.User) error
+	CorrectUserDetails(ctx context.Context, userId model.UserId, newDetails model.UserDetails) error
 	DeleteUser(ctx context.Context, userId model.UserId) error
 	ListAllUsers(ctx context.Context, next <-chan bool) (<-chan model.User, error)
 	FindUserById(ctx context.Context, userId model.UserId) (model.User, error)
@@ -34,6 +35,21 @@ func (d *DefaultUserUseCase) RegisterNewUser(ctx context.Context, newUser model.
 
 	return d.eventBus.Publish(ctx, events.NewUserRegistered{
 		User: newUser,
+	})
+}
+
+func (d *DefaultUserUseCase) CorrectUserDetails(ctx context.Context, userId model.UserId, newDetails model.UserDetails) error {
+	correctDetails := func(user model.User) model.User {
+		return user.CorrectDetails(newDetails)
+	}
+
+	if err := d.repository.UpdateUser(ctx, userId, correctDetails); err != nil {
+		return err
+	}
+
+	return d.eventBus.Publish(ctx, events.UserDetailsCorrected{
+		UserId:         userId,
+		NewUserDetails: newDetails,
 	})
 }
 

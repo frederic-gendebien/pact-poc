@@ -177,8 +177,16 @@ func repositoryWith(users ...model.User) func() error {
 
 func testUser(number int) model.User {
 	return model.User{
-		Id:    model.UserId(fmt.Sprintf("user%d", number)),
-		Name:  fmt.Sprintf("name%d", number),
+		Id: model.UserId(fmt.Sprintf("user%d", number)),
+		Details: model.UserDetails{
+			Name: fmt.Sprintf("name%d", number),
+		},
 		Email: model.Email(fmt.Sprintf("email%d", number)),
+	}
+}
+
+func newTestUserDetails(number int) model.UserDetails {
+	return model.UserDetails{
+		Name: fmt.Sprintf("new_name%d", number),
 	}
 }

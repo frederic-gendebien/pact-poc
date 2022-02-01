@@ -111,8 +111,16 @@ func tearDown() {
 
 func testUser(number int) providermodel.User {
 	return providermodel.User{
-		Id:    providermodel.UserId(fmt.Sprintf("user%d", number)),
-		Name:  fmt.Sprintf("name%d", number),
+		Id: providermodel.UserId(fmt.Sprintf("user%d", number)),
+		Details: providermodel.UserDetails{
+			Name: fmt.Sprintf("name%d", number),
+		},
 		Email: providermodel.Email(fmt.Sprintf("email%d", number)),
+	}
+}
+
+func newTestUserDetails(number int) providermodel.UserDetails {
+	return providermodel.UserDetails{
+		Name: fmt.Sprintf("new_name%d", number),
 	}
 }

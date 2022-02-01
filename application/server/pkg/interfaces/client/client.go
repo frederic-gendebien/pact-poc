@@ -37,6 +37,21 @@ func (c *Client) RegisterNewUser(ctx context.Context, newUser model.User) error 
 	return err
 }
 
+func (c *Client) CorrectUserDetails(ctx context.Context, userId model.UserId, newUserDetails model.UserDetails) error {
+	response, err := c.client.R().
+		SetBody(newUserDetails).
+		SetPathParam("user_id", string(userId)).
+		Put("/users/{user_id}/details")
+
+	if err != nil {
+		return model.NewUnknownError("could not correct user details", err)
+	}
+
+	_, err = bodyOrError(response, emptyBody())
+
+	return err
+}
+
 func (c *Client) DeleteUser(ctx context.Context, userId model.UserId) error {
 	response, err := c.client.R().
 		SetPathParam("user_id", string(userId)).

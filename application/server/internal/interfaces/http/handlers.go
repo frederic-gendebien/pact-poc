@@ -14,6 +14,7 @@ const (
 func addUserHandlers(engine *gin.Engine, useCase usecase.UserUseCase) {
 	users := engine.Group("/users")
 	users.PUT("", registerNewUser(useCase))
+	users.PUT(":user_id/details", correctDetails(useCase))
 	users.DELETE(":user_id", deleteUser(useCase))
 	users.GET("", getUsers(useCase))
 	users.GET(":user_id", getUser(useCase))
@@ -28,6 +29,24 @@ func registerNewUser(useCase usecase.UserUseCase) gin.HandlerFunc {
 		}
 
 		createdOrFail(ctx, useCase.RegisterNewUser(ctx, newUser))
+	}
+}
+
+func correctDetails(useCase usecase.UserUseCase) gin.HandlerFunc {
+	return func(ctx *gin.Context) {
+		userId := ctx.Param("user_id")
+		if userId == "" {
+			fail(ctx, model.NewBadRequest("wrong user id"))
+			return
+		}
+
+		newUserDetails := model.UserDetails{}
+		if err := newUserDetails.InvalidAfter(ctx.BindJSON(&newUserDetails)); err != nil {
+			fail(ctx, model.NewBadRequest(err.Error()))
+			return
+		}
+
+		acceptedOrFail(ctx, useCase.CorrectUserDetails(ctx, model.UserId(userId), newUserDetails))
 	}
 }
 

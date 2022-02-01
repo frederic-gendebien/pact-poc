@@ -85,6 +85,108 @@ func TestClientPact_RegisterNewUser(t *testing.T) {
 	})
 }
 
+func TestClientPact_CorrectUserDetails(t *testing.T) {
+	t.Run("Correct Unknown User Details", func(t *testing.T) {
+		pact.Interactions = nil
+		pact.AddInteraction().
+			Given("The user1 does not exist").
+			UponReceiving("A correct user details request for user1").
+			WithRequest(dsl.Request{
+				Method:  gohttp.MethodPut,
+				Path:    dsl.Term("/users/user1/details", "^/users/[a-z0-9-]+/details$"),
+				Query:   nil,
+				Headers: requestHeadersWithBody(),
+				Body:    newTestUserDetails(1),
+			}).
+			WillRespondWith(dsl.Response{
+				Status:  gohttp.StatusNotFound,
+				Headers: responseHeadersWithoutBody(),
+				Body:    errorResponse("user with id: user1 was not found"),
+			})
+
+		verify(t, pact, func() error {
+			if err := userClient.CorrectUserDetails(context.Background(), testUser(1).Id, newTestUserDetails(1)); err == nil || !errors.Is(err, model.NotFoundError{}) {
+				return fmt.Errorf("a %v was expected, but found: %v", model.NotFoundError{}, err)
+			}
+
+			return nil
+		})
+	})
+	t.Run("Correct Existing User Details", func(t *testing.T) {
+		pact.Interactions = nil
+		pact.AddInteraction().
+			Given("The user1 exists already").
+			UponReceiving("A correct user details request for user1").
+			WithRequest(dsl.Request{
+				Method:  gohttp.MethodPut,
+				Path:    dsl.Term("/users/user1/details", "^/users/[a-z0-9-]+/details$"),
+				Query:   nil,
+				Headers: requestHeadersWithBody(),
+				Body:    newTestUserDetails(1),
+			}).
+			WillRespondWith(dsl.Response{
+				Status:  gohttp.StatusAccepted,
+				Headers: responseHeadersWithoutBody(),
+				Body:    nil,
+			})
+
+		verify(t, pact, func() error {
+			return userClient.CorrectUserDetails(context.Background(), testUser(1).Id, newTestUserDetails(1))
+		})
+	})
+}
+
+func TestClientPact_DeleteUser(t *testing.T) {
+	t.Run("Delete An Existing User", func(t *testing.T) {
+		pact.Interactions = nil
+		pact.AddInteraction().
+			Given("The user1 exists").
+			UponReceiving("A delete user1 request").
+			WithRequest(dsl.Request{
+				Method:  gohttp.MethodDelete,
+				Path:    dsl.Term("/users/user1", "^/users/[a-z0-9-]+$"),
+				Query:   nil,
+				Headers: requestHeadersWithoutBody(),
+				Body:    nil,
+			}).
+			WillRespondWith(dsl.Response{
+				Status:  gohttp.StatusAccepted,
+				Headers: responseHeadersWithoutBody(),
+				Body:    nil,
+			})
+
+		verify(t, pact, func() error {
+			return userClient.DeleteUser(context.Background(), testUser(1).Id)
+		})
+	})
+	t.Run("Delete An Unknown User", func(t *testing.T) {
+		pact.Interactions = nil
+		pact.AddInteraction().
+			Given("The user1 does not exist").
+			UponReceiving("A delete user1 request").
+			WithRequest(dsl.Request{
+				Method:  gohttp.MethodDelete,
+				Path:    dsl.Term("/users/user1", "^/users/[a-z0-9-]+$"),
+				Query:   nil,
+				Headers: requestHeadersWithoutBody(),
+				Body:    nil,
+			}).
+			WillRespondWith(dsl.Response{
+				Status:  gohttp.StatusNotFound,
+				Headers: responseHeadersWithBody(),
+				Body:    errorResponse("user with id: user1 was not found"),
+			})
+
+		verify(t, pact, func() error {
+			if err := userClient.DeleteUser(context.Background(), testUser(1).Id); err == nil || !errors.Is(err, model.NotFoundError{}) {
+				return fmt.Errorf("a %v was expected, but found: %v", model.NotFoundError{}, err)
+			}
+
+			return nil
+		})
+	})
+}
+
 func TestClientPact_ListAllUsers(t *testing.T) {
 	t.Run("List All Users When There Are Many", func(t *testing.T) {
 		pact.Interactions = nil
@@ -237,62 +339,6 @@ func TestClientPact_FindUserById(t *testing.T) {
 	})
 }
 
-func TestClientPact_DeleteUser(t *testing.T) {
-	t.Run("Delete An Existing User", func(t *testing.T) {
-		pact.Interactions = nil
-		pact.AddInteraction().
-			Given("The user1 exists").
-			UponReceiving("A delete user1 request").
-			WithRequest(dsl.Request{
-				Method:  gohttp.MethodDelete,
-				Path:    dsl.Term("/users/user1", "^/users/[a-z0-9-]+$"),
-				Query:   nil,
-				Headers: requestHeadersWithoutBody(),
-				Body:    nil,
-			}).
-			WillRespondWith(dsl.Response{
-				Status:  gohttp.StatusAccepted,
-				Headers: responseHeadersWithoutBody(),
-				Body:    nil,
-			})
-
-		verify(t, pact, func() error {
-			err := userClient.DeleteUser(context.Background(), testUser(1).Id)
-			if err != nil {
-				return fmt.Errorf("could not delete user: %v", err)
-			}
-
-			return nil
-		})
-	})
-	t.Run("Delete An Unknown User", func(t *testing.T) {
-		pact.Interactions = nil
-		pact.AddInteraction().
-			Given("The user1 does not exist").
-			UponReceiving("A delete user1 request").
-			WithRequest(dsl.Request{
-				Method:  gohttp.MethodDelete,
-				Path:    dsl.Term("/users/user1", "^/users/[a-z0-9-]+$"),
-				Query:   nil,
-				Headers: requestHeadersWithoutBody(),
-				Body:    nil,
-			}).
-			WillRespondWith(dsl.Response{
-				Status:  gohttp.StatusNotFound,
-				Headers: responseHeadersWithBody(),
-				Body:    errorResponse("user with id: user1 was not found"),
-			})
-
-		verify(t, pact, func() error {
-			if err := userClient.DeleteUser(context.Background(), testUser(1).Id); err == nil || !errors.Is(err, model.NotFoundError{}) {
-				return fmt.Errorf("a %v was expected, but found: %v", model.NotFoundError{}, err)
-			}
-
-			return nil
-		})
-	})
-}
-
 func setup() {
 	log.Println("setup pact environment")
 	pact = dsl.Pact{
@@ -341,9 +387,17 @@ func responseHeadersWithoutBody() dsl.MapMatcher {
 
 func testUser(number int) model.User {
 	return model.User{
-		Id:    model.UserId(fmt.Sprintf("user%d", number)),
-		Name:  fmt.Sprintf("name%d", number),
+		Id: model.UserId(fmt.Sprintf("user%d", number)),
+		Details: model.UserDetails{
+			Name: fmt.Sprintf("name%d", number),
+		},
 		Email: model.Email(fmt.Sprintf("email%d", number)),
+	}
+}
+
+func newTestUserDetails(number int) model.UserDetails {
+	return model.UserDetails{
+		Name: fmt.Sprintf("new_name%d", number),
 	}
 }
 
