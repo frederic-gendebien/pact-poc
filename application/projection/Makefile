@@ -12,7 +12,7 @@ info:
 clean:
 	-rm bin/app
 
-build:
+compile:
 	go build -v ./...
 
 bin/app:

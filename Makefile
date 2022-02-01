@@ -1,5 +1,7 @@
 include config.mk
 
+.PHONY=clean,build,configure,test
+
 PACT_FOLDERS=application/tests/pact/pacts
 
 info:
@@ -21,7 +23,7 @@ pact-setup:
 deps:
 	go mod download
 
-build:
+compile:
 	go build -v ./...
 
 test: pact-publish pact-provider-test

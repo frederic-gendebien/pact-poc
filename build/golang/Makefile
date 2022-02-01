@@ -5,7 +5,7 @@ TAG=pact-bullseye
 login:
 	docker login
 
-build:
+compile:
 	docker build -t $(IMAGE):$(TAG) .
 
 push: login build
