@@ -38,6 +38,7 @@ projection-pact-test:
 
 server-pact-test:
 	go test -v github.com/frederic-gendebien/pact-poc/application/server/internal/interfaces/http
+	go test -v github.com/frederic-gendebien/pact-poc/application/server/internal/usecase
 
 pact-publish: $(PACT_FOLDERS)
 	@pact-broker publish application/tests/pact/pacts \

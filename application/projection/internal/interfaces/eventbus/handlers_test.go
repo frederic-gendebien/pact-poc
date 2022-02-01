@@ -112,7 +112,7 @@ func setup() {
 	log.Println("setup pact environment")
 	pact = dsl.Pact{
 		Consumer:                 "user-projection",
-		Provider:                 "user-server-async",
+		Provider:                 "user-server-usecase",
 		LogDir:                   "../../../../tests/pact/logs",
 		PactDir:                  "../../../../tests/pact/pacts",
 		LogLevel:                 "INFO",

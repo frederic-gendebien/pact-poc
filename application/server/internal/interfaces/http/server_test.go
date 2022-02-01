@@ -5,11 +5,9 @@ import (
 	"fmt"
 	inmemorypers "github.com/frederic-gendebien/pact-poc/application/server/internal/infrastructure/persistence/inmemory"
 	"github.com/frederic-gendebien/pact-poc/application/server/internal/usecase"
-	"github.com/frederic-gendebien/pact-poc/application/server/pkg/domain/events"
 	"github.com/frederic-gendebien/pact-poc/application/server/pkg/domain/model"
 	"github.com/frederic-gendebien/pact-poc/lib/config"
 	"github.com/frederic-gendebien/pact-poc/lib/config/environment"
-	"github.com/frederic-gendebien/pact-poc/lib/eventbus"
 	inmemoryevb "github.com/frederic-gendebien/pact-poc/lib/eventbus/inmemory"
 	"github.com/pact-foundation/pact-go/dsl"
 	"github.com/pact-foundation/pact-go/types"
@@ -32,7 +30,6 @@ var (
 	port            int
 	repository      *inmemorypers.UserRepository
 	eventBus        *inmemoryevb.EventBus
-	eventSniffer    *eventbus.EventSniffer
 	useCase         usecase.UserUseCase
 	server          *Server
 )
@@ -54,7 +51,6 @@ func init() {
 
 	repository = inmemorypers.NewUserRepository()
 	eventBus = inmemoryevb.NewEventBus()
-	eventSniffer = eventbus.NewEventSniffer(eventBus)
 	useCase = usecase.NewUserUseCase(repository, eventBus)
 	server = NewServer(useCase)
 
@@ -86,62 +82,6 @@ func TestServerHTTPPact(t *testing.T) {
 		PactLogDir: "../../../../tests/pact/logs",
 	}); err != nil {
 		t.Fatalf("server http verifaction failed: %v", err)
-	}
-}
-
-func TestServerMessagePact(t *testing.T) {
-	eventSniffer.Clear()
-	if err := eventSniffer.Listen(
-		events.NewUserRegistered{},
-		events.UserDetailsCorrected{},
-	); err != nil {
-		t.Fatal(err)
-	}
-
-	pact := dsl.Pact{
-		Provider:                 "user-server-async",
-		LogDir:                   "../../../../tests/pact/logs",
-		PactDir:                  "../../../../tests/pact/pacts",
-		DisableToolValidityCheck: true,
-		LogLevel:                 "INFO",
-	}
-
-	if _, err := pact.VerifyMessageProvider(t, dsl.VerifyMessageRequest{
-		Tags:                       []string{"main"},
-		BrokerURL:                  pactBrokerUrl,
-		BrokerToken:                pactBrokerToken,
-		PactURLs:                   nil,
-		ConsumerVersionSelectors:   nil,
-		PublishVerificationResults: true,
-		ProviderVersion:            "0.0.1",
-		ProviderTags:               []string{"main"},
-		MessageHandlers:            messageHandlers(),
-		StateHandlers:              messageStateHandlers(),
-		PactLogDir:                 "../../../../tests/pact/logs",
-	}); err != nil {
-		t.Fatalf("server message verifaction failed: %v", err)
-	}
-}
-
-func messageHandlers() dsl.MessageHandlers {
-	return dsl.MessageHandlers{
-		"a user1 registered event": func(message dsl.Message) (interface{}, error) {
-			return eventSniffer.GetAndClearEvents()[0], nil
-		},
-		"a user1 details corrected event": func(message dsl.Message) (interface{}, error) {
-			return eventSniffer.GetAndClearEvents()[0], nil
-		},
-	}
-}
-
-func messageStateHandlers() dsl.StateHandlers {
-	return dsl.StateHandlers{
-		"user1 has been registered": func(state dsl.State) error {
-			return useCase.RegisterNewUser(context.Background(), testUser(1))
-		},
-		"user1 details have been corrected": func(state dsl.State) error {
-			return useCase.CorrectUserDetails(context.Background(), testUser(1).Id, newTestUserDetails(1))
-		},
 	}
 }
 
@@ -191,11 +131,5 @@ func testUser(number int) model.User {
 			Name: fmt.Sprintf("name%d", number),
 		},
 		Email: model.Email(fmt.Sprintf("email%d", number)),
-	}
-}
-
-func newTestUserDetails(number int) model.UserDetails {
-	return model.UserDetails{
-		Name: fmt.Sprintf("new_name%d", number),
 	}
 }
