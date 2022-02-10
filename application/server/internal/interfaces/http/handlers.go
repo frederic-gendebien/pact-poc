@@ -78,7 +78,6 @@ func minOrDefault(value string, maxValue int) int {
 	if value == "" {
 		return maxValue
 	}
-
 	intValue, err := strconv.Atoi(value)
 	if err != nil {
 		return maxValue

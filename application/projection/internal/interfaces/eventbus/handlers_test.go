@@ -11,70 +11,95 @@ import (
 	"github.com/frederic-gendebien/pact-poc/lib/eventbus"
 	"github.com/frederic-gendebien/pact-poc/lib/eventbus/domain"
 	inmemoryevb "github.com/frederic-gendebien/pact-poc/lib/eventbus/inmemory"
-	"github.com/pact-foundation/pact-go/dsl"
+	"github.com/pact-foundation/pact-go/v2/message"
+	"github.com/pact-foundation/pact-go/v2/models"
+	"github.com/stretchr/testify/assert"
 	"log"
-	"os"
 	"testing"
 )
 
 var (
-	pact     dsl.Pact
+	pact     *message.MessagePactV3
 	repo     repository.UserRepository
 	useCase  usecase.UserProjectionUseCase
 	eventBus eventbus.EventBus
 )
 
-func TestMain(m *testing.M) {
-	os.Exit(func() int {
-		setup()
-		defer tearDown()
+func init() {
+	log.Println("setup pact environment")
+	var err error
+	pact, err = message.NewMessagePactV3(message.MessageConfig{
+		Consumer: "user-projection",
+		Provider: "user-server-usecase",
+		PactDir:  "../../../../tests/pact/pacts",
+	})
+	if err != nil {
+		log.Fatalf("could not listen for events: %v", err)
+	}
 
-		exitCode := m.Run()
+	repo = inmemorypers.NewUserRepository()
+	useCase = usecase.NewUserProjectionUseCase(repo)
+	eventBus = inmemoryevb.NewEventBus()
+	if err := eventBus.Listen(context.Background(),
+		ListenerName,
+		NewUserRegisteredHandler(useCase),
+		UserDetailsCorrectedHandler(useCase),
+		UserDeletedHandler(useCase),
+	); err != nil {
+		log.Fatalf("could not listen for events: %v", err)
+	}
 
-		if err := pact.WritePact(); err != nil {
-			log.Fatalln("could not write pact: ", err)
-		}
-
-		return exitCode
-	}())
+	log.Println("pact environment setup done")
 }
 
 func TestProjectionPact_NewUserRegistered(t *testing.T) {
 	t.Run("New User Registered", func(t *testing.T) {
 		user := testUser(1)
-		message := pact.AddMessage()
-		message.Given("user1 has been registered").
+		err := pact.AddMessage().
+			Given(models.ProviderStateV3{
+				Name:       "user1 has been registered",
+				Parameters: userParameters(user),
+			}).
 			ExpectsToReceive("a user1 registered event").
-			WithContent(&events.NewUserRegistered{User: user}).
-			AsType(&events.NewUserRegistered{})
+			WithJSONContent(&events.NewUserRegistered{User: user}).
+			AsType(&events.NewUserRegistered{}).
+			ConsumedBy(sendSearchAndExpect(newUserRegistered(), string(user.Email), user)).
+			Verify(t)
 
-		if err := pact.VerifyMessageConsumer(t, message, sendSearchAndExpect(newUserRegistered(), string(user.Email), user)); err != nil {
-			t.Fatalf("Error on verify: %v", err)
-		}
+		assert.NoError(t, err)
 	})
 }
 
 func TestProjectionPact_UserDetailsCorrected(t *testing.T) {
 	t.Run("User Details Corrected", func(t *testing.T) {
 		user := testUser(1)
-		message := pact.AddMessage()
-		message.Given("user1 details have been corrected").
+		err := pact.AddMessage().
+			Given(models.ProviderStateV3{
+				Name:       "user1 details have been corrected",
+				Parameters: userParameters(user),
+			}).
 			ExpectsToReceive("a user1 details corrected event").
-			WithContent(&events.UserDetailsCorrected{
+			WithJSONContent(&events.UserDetailsCorrected{
 				UserId:         user.Id,
 				NewUserDetails: newTestUserDetails(1),
 			}).
-			AsType(&events.UserDetailsCorrected{})
+			AsType(&events.UserDetailsCorrected{}).
+			ConsumedBy(sendSearchAndExpect(userDetailsCorrected(), string(user.Email), user)).
+			Verify(t)
 
-		if err := pact.VerifyMessageConsumer(t, message, sendSearchAndExpect(userDetailsCorrected(), string(user.Email), user)); err != nil {
-			t.Fatalf("Error on verify: %v", err)
-		}
+		assert.NoError(t, err)
 	})
 }
 
-func sendSearchAndExpect(eventFrom func(dsl.Message) domain.Event, text string, registeredUser providermodel.User) dsl.MessageConsumer {
-	return func(message dsl.Message) error {
-		if err := eventBus.Publish(context.Background(), eventFrom(message)); err != nil {
+func userParameters(user providermodel.User) map[string]interface{} {
+	return map[string]interface{}{
+		"Id": user.Id,
+	}
+}
+
+func sendSearchAndExpect(eventFrom func(message.AsynchronousMessage) domain.Event, text string, registeredUser providermodel.User) message.MessageConsumer {
+	return func(asynchronousMessage message.AsynchronousMessage) error {
+		if err := eventBus.Publish(context.Background(), eventFrom(asynchronousMessage)); err != nil {
 			return err
 		}
 
@@ -96,50 +121,16 @@ func sendSearchAndExpect(eventFrom func(dsl.Message) domain.Event, text string, 
 	}
 }
 
-func newUserRegistered() func(dsl.Message) domain.Event {
-	return func(message dsl.Message) domain.Event {
-		return message.Content.(*events.NewUserRegistered)
+func newUserRegistered() func(message.AsynchronousMessage) domain.Event {
+	return func(event message.AsynchronousMessage) domain.Event {
+		return event.Content.(*events.NewUserRegistered)
 	}
 }
 
-func userDetailsCorrected() func(dsl.Message) domain.Event {
-	return func(message dsl.Message) domain.Event {
-		return message.Content.(*events.UserDetailsCorrected)
+func userDetailsCorrected() func(message.AsynchronousMessage) domain.Event {
+	return func(event message.AsynchronousMessage) domain.Event {
+		return event.Content.(*events.UserDetailsCorrected)
 	}
-}
-
-func setup() {
-	log.Println("setup pact environment")
-	pact = dsl.Pact{
-		Consumer:                 "user-projection",
-		Provider:                 "user-server-usecase",
-		LogDir:                   "../../../../tests/pact/logs",
-		PactDir:                  "../../../../tests/pact/pacts",
-		LogLevel:                 "INFO",
-		DisableToolValidityCheck: true,
-	}
-	pact.Setup(false)
-	repo = inmemorypers.NewUserRepository()
-	useCase = usecase.NewUserProjectionUseCase(repo)
-	eventBus = inmemoryevb.NewEventBus()
-	if err := eventBus.Listen(context.Background(),
-		ListenerName,
-		NewUserRegisteredHandler(useCase),
-		UserDetailsCorrectedHandler(useCase),
-		UserDeletedHandler(useCase),
-	); err != nil {
-		log.Fatalf("could not listen for events: %v", err)
-	}
-
-	log.Println("pact environment setup done")
-}
-
-func tearDown() {
-	log.Println("tearing down pact environment")
-	pact.Teardown()
-	_ = repo.Close()
-	_ = eventBus.Close()
-	log.Println("pact environment tear down done")
 }
 
 func testUser(number int) providermodel.User {

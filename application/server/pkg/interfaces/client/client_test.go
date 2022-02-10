@@ -8,6 +8,7 @@ import (
 	"github.com/frederic-gendebien/pact-poc/application/server/pkg/domain/model"
 	"github.com/pact-foundation/pact-go/v2/consumer"
 	"github.com/pact-foundation/pact-go/v2/matchers"
+	"github.com/pact-foundation/pact-go/v2/models"
 	"github.com/stretchr/testify/assert"
 	"log"
 	gohttp "net/http"
@@ -16,14 +17,14 @@ import (
 )
 
 var (
-	pact *consumer.HTTPMockProviderV2
+	pact *consumer.HTTPMockProviderV3
 )
 
 func init() {
 	log.Println("setup pact environment")
 
 	var err error
-	pact, err = consumer.NewV2Pact(consumer.MockHTTPProviderConfig{
+	pact, err = consumer.NewV3Pact(consumer.MockHTTPProviderConfig{
 		Consumer: "user-client",
 		Provider: "user-server-http",
 		LogDir:   "../../../../tests/pact/logs",
@@ -38,14 +39,18 @@ func init() {
 
 func TestClientPact_RegisterNewUser(t *testing.T) {
 	t.Run("Register New User", func(t *testing.T) {
+		user1 := testUser(1)
 		pact.AddInteraction().
-			Given("The user1 does not exist").
+			Given(models.ProviderStateV3{
+				Name:       "The user1 does not exist",
+				Parameters: userParameters(user1),
+			}).
 			UponReceiving("A new user registration request for user1").
 			WithCompleteRequest(consumer.Request{
 				Method:  gohttp.MethodPut,
 				Path:    matchers.Term("/users", "^/users$"),
 				Headers: requestHeadersWithBody(),
-				Body:    testUser(1),
+				Body:    user1,
 			}).
 			WithCompleteResponse(consumer.Response{
 				Status:  gohttp.StatusCreated,
@@ -54,19 +59,23 @@ func TestClientPact_RegisterNewUser(t *testing.T) {
 			})
 
 		verify(t, func(userClient *Client) error {
-			return userClient.RegisterNewUser(context.Background(), testUser(1))
+			return userClient.RegisterNewUser(context.Background(), user1)
 		})
 	})
 	t.Run("Register An Existing User", func(t *testing.T) {
+		user1 := testUser(1)
 		pact.AddInteraction().
-			Given("The user1 exists already").
+			Given(models.ProviderStateV3{
+				Name:       "The user1 exists already",
+				Parameters: userParameters(user1),
+			}).
 			UponReceiving("A new user registration request for user1").
 			WithCompleteRequest(consumer.Request{
 				Method:  gohttp.MethodPut,
 				Path:    matchers.Term("/users", "^/users$"),
 				Query:   nil,
 				Headers: requestHeadersWithBody(),
-				Body:    testUser(1),
+				Body:    user1,
 			}).
 			WithCompleteResponse(consumer.Response{
 				Status:  gohttp.StatusBadRequest,
@@ -75,7 +84,7 @@ func TestClientPact_RegisterNewUser(t *testing.T) {
 			})
 
 		verify(t, func(userClient *Client) error {
-			if err := userClient.RegisterNewUser(context.Background(), testUser(1)); err == nil || !errors.Is(err, model.BadRequestError{}) {
+			if err := userClient.RegisterNewUser(context.Background(), user1); err == nil || !errors.Is(err, model.BadRequestError{}) {
 				return fmt.Errorf("a %v was expected, but found: %v", model.BadRequestError{}, err)
 			}
 
@@ -86,15 +95,21 @@ func TestClientPact_RegisterNewUser(t *testing.T) {
 
 func TestClientPact_CorrectUserDetails(t *testing.T) {
 	t.Run("Correct Unknown User Details", func(t *testing.T) {
+		user1 := testUser(1)
+		newUser1Details := newTestUserDetails(1)
+
 		pact.AddInteraction().
-			Given("The user1 does not exist").
+			Given(models.ProviderStateV3{
+				Name:       "The user1 does not exist",
+				Parameters: nil,
+			}).
 			UponReceiving("A correct user details request for user1").
 			WithCompleteRequest(consumer.Request{
 				Method:  gohttp.MethodPut,
 				Path:    matchers.Term("/users/user1/details", "^/users/[a-z0-9-]+/details$"),
 				Query:   nil,
 				Headers: requestHeadersWithBody(),
-				Body:    newTestUserDetails(1),
+				Body:    newUser1Details,
 			}).
 			WithCompleteResponse(consumer.Response{
 				Status:  gohttp.StatusNotFound,
@@ -103,7 +118,7 @@ func TestClientPact_CorrectUserDetails(t *testing.T) {
 			})
 
 		verify(t, func(userClient *Client) error {
-			if err := userClient.CorrectUserDetails(context.Background(), testUser(1).Id, newTestUserDetails(1)); err == nil || !errors.Is(err, model.NotFoundError{}) {
+			if err := userClient.CorrectUserDetails(context.Background(), user1.Id, newUser1Details); err == nil || !errors.Is(err, model.NotFoundError{}) {
 				return fmt.Errorf("a %v was expected, but found: %v", model.NotFoundError{}, err)
 			}
 
@@ -111,15 +126,21 @@ func TestClientPact_CorrectUserDetails(t *testing.T) {
 		})
 	})
 	t.Run("Correct Existing User Details", func(t *testing.T) {
+		user1 := testUser(1)
+		newUser1Details := newTestUserDetails(1)
+
 		pact.AddInteraction().
-			Given("The user1 exists already").
+			Given(models.ProviderStateV3{
+				Name:       "The user1 exists already",
+				Parameters: userParameters(user1),
+			}).
 			UponReceiving("A correct user details request for user1").
 			WithCompleteRequest(consumer.Request{
 				Method:  gohttp.MethodPut,
 				Path:    matchers.Term("/users/user1/details", "^/users/[a-z0-9-]+/details$"),
 				Query:   nil,
 				Headers: requestHeadersWithBody(),
-				Body:    newTestUserDetails(1),
+				Body:    newUser1Details,
 			}).
 			WithCompleteResponse(consumer.Response{
 				Status:  gohttp.StatusAccepted,
@@ -128,15 +149,19 @@ func TestClientPact_CorrectUserDetails(t *testing.T) {
 			})
 
 		verify(t, func(userClient *Client) error {
-			return userClient.CorrectUserDetails(context.Background(), testUser(1).Id, newTestUserDetails(1))
+			return userClient.CorrectUserDetails(context.Background(), user1.Id, newUser1Details)
 		})
 	})
 }
 
 func TestClientPact_DeleteUser(t *testing.T) {
 	t.Run("Delete An Existing User", func(t *testing.T) {
+		user1 := testUser(1)
 		pact.AddInteraction().
-			Given("The user1 exists").
+			Given(models.ProviderStateV3{
+				Name:       "The user1 exists",
+				Parameters: userParameters(user1),
+			}).
 			UponReceiving("A delete user1 request").
 			WithCompleteRequest(consumer.Request{
 				Method:  gohttp.MethodDelete,
@@ -156,8 +181,12 @@ func TestClientPact_DeleteUser(t *testing.T) {
 		})
 	})
 	t.Run("Delete An Unknown User", func(t *testing.T) {
+		user1 := testUser(1)
 		pact.AddInteraction().
-			Given("The user1 does not exist").
+			Given(models.ProviderStateV3{
+				Name:       "The user1 does not exist",
+				Parameters: nil,
+			}).
 			UponReceiving("A delete user1 request").
 			WithCompleteRequest(consumer.Request{
 				Method:  gohttp.MethodDelete,
@@ -173,7 +202,7 @@ func TestClientPact_DeleteUser(t *testing.T) {
 			})
 
 		verify(t, func(userClient *Client) error {
-			if err := userClient.DeleteUser(context.Background(), testUser(1).Id); err == nil || !errors.Is(err, model.NotFoundError{}) {
+			if err := userClient.DeleteUser(context.Background(), user1.Id); err == nil || !errors.Is(err, model.NotFoundError{}) {
 				return fmt.Errorf("a %v was expected, but found: %v", model.NotFoundError{}, err)
 			}
 
@@ -192,7 +221,10 @@ func TestClientPact_ListAllUsers(t *testing.T) {
 			testUser(5),
 		}
 		pact.AddInteraction().
-			Given("Many users exist").
+			Given(models.ProviderStateV3{
+				Name:       "Many users exist",
+				Parameters: usersParameters(expectedUsers),
+			}).
 			UponReceiving("A list all users request").
 			WithCompleteRequest(consumer.Request{
 				Method:  gohttp.MethodGet,
@@ -232,7 +264,10 @@ func TestClientPact_ListAllUsers(t *testing.T) {
 	t.Run("List All Users When There Are None", func(t *testing.T) {
 		expectedUsers := make([]model.User, 0)
 		pact.AddInteraction().
-			Given("No users exist").
+			Given(models.ProviderStateV3{
+				Name:       "No users exist",
+				Parameters: nil,
+			}).
 			UponReceiving("A list all users request").
 			WithCompleteRequest(consumer.Request{
 				Method:  gohttp.MethodGet,
@@ -273,9 +308,12 @@ func TestClientPact_ListAllUsers(t *testing.T) {
 
 func TestClientPact_FindUserById(t *testing.T) {
 	t.Run("Find An Existing User By Id", func(t *testing.T) {
-		expectedUser := testUser(1)
+		user1 := testUser(1)
 		pact.AddInteraction().
-			Given("The user1 exists").
+			Given(models.ProviderStateV3{
+				Name:       "The user1 exists",
+				Parameters: userParameters(user1),
+			}).
 			UponReceiving("A find user1 by id request").
 			WithCompleteRequest(consumer.Request{
 				Method:  gohttp.MethodGet,
@@ -287,25 +325,29 @@ func TestClientPact_FindUserById(t *testing.T) {
 			WithCompleteResponse(consumer.Response{
 				Status:  gohttp.StatusOK,
 				Headers: responseHeadersWithBody(),
-				Body:    expectedUser,
+				Body:    user1,
 			})
 
 		verify(t, func(userClient *Client) error {
-			user, err := userClient.FindUserById(context.Background(), expectedUser.Id)
+			user, err := userClient.FindUserById(context.Background(), user1.Id)
 			if err != nil {
 				return fmt.Errorf("could not find user by id: %v", err)
 			}
 
-			if !reflect.DeepEqual(user, expectedUser) {
-				return fmt.Errorf("expected: %v, but got %v", expectedUser, user)
+			if !reflect.DeepEqual(user, user1) {
+				return fmt.Errorf("expected: %v, but got %v", user1, user)
 			}
 
 			return nil
 		})
 	})
 	t.Run("Find An Unknown User By Id", func(t *testing.T) {
+		user1 := testUser(1)
 		pact.AddInteraction().
-			Given("The user1 does not exist").
+			Given(models.ProviderStateV3{
+				Name:       "The user1 does not exist",
+				Parameters: nil,
+			}).
 			UponReceiving("A find user1 by id request").
 			WithCompleteRequest(consumer.Request{
 				Method:  gohttp.MethodGet,
@@ -321,7 +363,7 @@ func TestClientPact_FindUserById(t *testing.T) {
 			})
 
 		verify(t, func(userClient *Client) error {
-			if _, err := userClient.FindUserById(context.Background(), testUser(1).Id); err == nil || !errors.Is(err, model.NotFoundError{}) {
+			if _, err := userClient.FindUserById(context.Background(), user1.Id); err == nil || !errors.Is(err, model.NotFoundError{}) {
 				return fmt.Errorf("a %v was expected, but found: %v", model.NotFoundError{}, err)
 			}
 
@@ -361,6 +403,27 @@ func testUser(number int) model.User {
 		},
 		Email: model.Email(fmt.Sprintf("email%d", number)),
 	}
+}
+
+func userParameters(user model.User) map[string]interface{} {
+	return map[string]interface{}{
+		"Id":           user.Id,
+		"Email":        user.Email,
+		"Details.Name": user.Details.Name,
+	}
+}
+
+func usersParameters(users []model.User) map[string]interface{} {
+	if users == nil {
+		return nil
+	}
+
+	result := make(map[string]interface{})
+	for _, user := range users {
+		result[string(user.Id)] = userParameters(user)
+	}
+
+	return result
 }
 
 func newTestUserDetails(number int) model.UserDetails {

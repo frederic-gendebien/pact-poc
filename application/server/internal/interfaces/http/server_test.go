@@ -9,9 +9,10 @@ import (
 	"github.com/frederic-gendebien/pact-poc/lib/config"
 	"github.com/frederic-gendebien/pact-poc/lib/config/environment"
 	inmemoryevb "github.com/frederic-gendebien/pact-poc/lib/eventbus/inmemory"
-	"github.com/pact-foundation/pact-go/dsl"
-	"github.com/pact-foundation/pact-go/types"
-	"github.com/pact-foundation/pact-go/utils"
+	"github.com/pact-foundation/pact-go/v2/models"
+	"github.com/pact-foundation/pact-go/v2/provider"
+	"github.com/pact-foundation/pact-go/v2/utils"
+	"github.com/stretchr/testify/assert"
 	"log"
 	"os"
 	"strconv"
@@ -60,33 +61,31 @@ func init() {
 }
 
 func TestServerHTTPPact(t *testing.T) {
-	pact := dsl.Pact{
-		Provider:                 "user-server-http",
-		LogDir:                   "../../../../tests/pact/logs",
-		PactDir:                  "../../../../tests/pact/pacts",
-		DisableToolValidityCheck: true,
-		LogLevel:                 "INFO",
-	}
-
-	if _, err := pact.VerifyProvider(t, types.VerifyRequest{
-		ProviderBaseURL:            fmt.Sprintf("http://127.0.0.1:%d", port),
-		Tags:                       []string{"main"},
+	pact := &provider.HTTPVerifier{}
+	err := pact.VerifyProvider(t, provider.VerifyRequest{
 		BrokerURL:                  pactBrokerUrl,
 		BrokerToken:                pactBrokerToken,
-		FailIfNoPactsFound:         true,
+		Provider:                   "user-server-http",
+		ProviderBaseURL:            fmt.Sprintf("http://127.0.0.1:%d", port),
 		ProviderVersion:            "0.0.1",
 		ProviderTags:               []string{"main"},
+		Tags:                       []string{"main"},
+		FailIfNoPactsFound:         true,
 		PublishVerificationResults: true,
 		StateHandlers:              stateHandlers(),
+		PactDirs:                   []string{"../../../../tests/pact/pacts"},
 
-		PactLogDir: "../../../../tests/pact/logs",
-	}); err != nil {
-		t.Fatalf("server http verifaction failed: %v", err)
-	}
+		//LogDir:                   "../../../../tests/pact/logs",
+		//DisableToolValidityCheck: true,
+		//LogLevel:                 "INFO",
+		//PactLogDir:               "../../../../tests/pact/logs",
+	})
+
+	assert.NoError(t, err)
 }
 
-func stateHandlers() types.StateHandlers {
-	return types.StateHandlers{
+func stateHandlers() models.StateHandlers {
+	return models.StateHandlers{
 		"The user1 does not exist": emptyRepository(),
 		"The user1 exists":         repositoryWith(testUser(1)),
 		"The user1 exists already": repositoryWith(testUser(1)),
@@ -101,26 +100,26 @@ func stateHandlers() types.StateHandlers {
 	}
 }
 
-func emptyRepository() types.StateHandler {
-	return func() error {
-		return repository.Clear(context.Background())
+func emptyRepository() models.StateHandler {
+	return func(setup bool, state models.ProviderStateV3) (models.ProviderStateV3Response, error) {
+		return nil, repository.Clear(context.Background())
 	}
 }
 
-func repositoryWith(users ...model.User) func() error {
-	return func() error {
+func repositoryWith(users ...model.User) models.StateHandler {
+	return func(setup bool, state models.ProviderStateV3) (models.ProviderStateV3Response, error) {
 		ctx := context.Background()
 		if err := repository.Clear(ctx); err != nil {
-			return err
+			return nil, err
 		}
 
 		for _, user := range users {
 			if err := repository.AddUser(ctx, user); err != nil {
-				return err
+				return nil, err
 			}
 		}
 
-		return nil
+		return nil, nil
 	}
 }
 

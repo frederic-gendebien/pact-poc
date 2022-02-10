@@ -10,8 +10,10 @@ import (
 	"github.com/frederic-gendebien/pact-poc/lib/config/environment"
 	"github.com/frederic-gendebien/pact-poc/lib/eventbus"
 	inmemoryevb "github.com/frederic-gendebien/pact-poc/lib/eventbus/inmemory"
-	"github.com/pact-foundation/pact-go/dsl"
-	"github.com/pact-foundation/pact-go/types"
+	"github.com/pact-foundation/pact-go/v2/message"
+	"github.com/pact-foundation/pact-go/v2/models"
+	"github.com/pact-foundation/pact-go/v2/provider"
+	"github.com/stretchr/testify/assert"
 	"testing"
 )
 
@@ -49,74 +51,71 @@ func TestServerMessagePact(t *testing.T) {
 	); err != nil {
 		t.Fatal(err)
 	}
+	pact := &message.MessageVerifier{}
+	err := pact.Verify(t, message.VerifyMessageRequest{
+		VerifyRequest: provider.VerifyRequest{
+			BrokerURL:                  pactBrokerUrl,
+			BrokerToken:                pactBrokerToken,
+			Provider:                   "user-server-usecase",
+			PactDirs:                   []string{"../../../tests/pact/pacts"},
+			Tags:                       []string{"main"},
+			PactURLs:                   nil,
+			ConsumerVersionSelectors:   nil,
+			PublishVerificationResults: true,
+			ProviderVersion:            "0.0.1",
+			ProviderTags:               []string{"main"},
+			StateHandlers:              messageStateHandlers(),
+		},
+		MessageHandlers: messageHandlers(),
+	})
 
-	pact := dsl.Pact{
-		Provider:                 "user-server-usecase",
-		LogDir:                   "../../../tests/pact/logs",
-		PactDir:                  "../../../tests/pact/pacts",
-		DisableToolValidityCheck: true,
-		LogLevel:                 "INFO",
-	}
-
-	if _, err := pact.VerifyMessageProvider(t, dsl.VerifyMessageRequest{
-		Tags:                       []string{"main"},
-		BrokerURL:                  pactBrokerUrl,
-		BrokerToken:                pactBrokerToken,
-		PactURLs:                   nil,
-		ConsumerVersionSelectors:   nil,
-		PublishVerificationResults: true,
-		ProviderVersion:            "0.0.1",
-		ProviderTags:               []string{"main"},
-		MessageHandlers:            messageHandlers(),
-		StateHandlers:              messageStateHandlers(),
-		PactLogDir:                 "../../../../tests/pact/logs",
-	}); err != nil {
-		t.Fatalf("server message verifaction failed: %v", err)
-	}
+	assert.NoError(t, err)
 }
 
-func messageHandlers() dsl.MessageHandlers {
-	return dsl.MessageHandlers{
-		"a user1 registered event": func(message dsl.Message) (interface{}, error) {
-			return eventSniffer.GetAndClearEvents()[0], nil
+func messageHandlers() message.MessageHandlers {
+	return message.MessageHandlers{
+		"a user1 registered event": func([]models.ProviderStateV3) (message.MessageBody, message.MessageMetadata, error) {
+			event := eventSniffer.GetAndClearEvents()[0]
+			return event, nil, nil
 		},
-		"a user1 details corrected event": func(message dsl.Message) (interface{}, error) {
-			return eventSniffer.GetAndClearEvents()[0], nil
+		"a user1 details corrected event": func([]models.ProviderStateV3) (message.MessageBody, message.MessageMetadata, error) {
+			event := eventSniffer.GetAndClearEvents()[0]
+			return event, nil, nil
 		},
 	}
 }
 
-func messageStateHandlers() dsl.StateHandlers {
-	return dsl.StateHandlers{
-		"user1 has been registered": func(state dsl.State) error {
-			return useCase.RegisterNewUser(context.Background(), testUser(1))
+func messageStateHandlers() models.StateHandlers {
+	return models.StateHandlers{
+		"user1 has been registered": func(setup bool, state models.ProviderStateV3) (models.ProviderStateV3Response, error) {
+			return nil, useCase.RegisterNewUser(context.Background(), testUser(1))
 		},
-		"user1 details have been corrected": func(state dsl.State) error {
-			return useCase.CorrectUserDetails(context.Background(), testUser(1).Id, newTestUserDetails(1))
+		"user1 details have been corrected": func(setup bool, state models.ProviderStateV3) (models.ProviderStateV3Response, error) {
+			return nil, useCase.CorrectUserDetails(context.Background(), testUser(1).Id, newTestUserDetails(1))
 		},
 	}
 }
 
-func emptyRepository() types.StateHandler {
-	return func() error {
-		return repo.Clear(context.Background())
+func emptyRepository() models.StateHandler {
+	return func(setup bool, state models.ProviderStateV3) (models.ProviderStateV3Response, error) {
+		return nil, repo.Clear(context.Background())
 	}
 }
 
-func repositoryWith(users ...model.User) func() error {
-	return func() error {
+func repositoryWith(users ...model.User) models.StateHandler {
+	return func(setup bool, state models.ProviderStateV3) (models.ProviderStateV3Response, error) {
 		ctx := context.Background()
 		if err := repo.Clear(ctx); err != nil {
-			return err
+			return nil, err
 		}
 
 		for _, user := range users {
 			if err := repo.AddUser(ctx, user); err != nil {
-				return err
+				return nil, err
 			}
 		}
 
-		return nil
+		return nil, nil
 	}
 }
 
